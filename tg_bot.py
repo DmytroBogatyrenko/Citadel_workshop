@@ -1,10 +1,20 @@
+import os
+import asyncio
+from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
 from sqlalchemy.future import select
 from project_models import async_session, Users_in_telegram, User
-import asyncio
 
-TOKEN = "8674916665:AAGek3QVKkmISr9UMst0B7PywRow10LyaGM" 
+# Завантажуємо змінні середовища з файлу .env
+load_dotenv()
+TOKEN = os.getenv("BOT_TOKEN")
+
+# Перевірка, чи токен взагалі передався (щоб бот не падав із незрозумілою помилкою)
+if not TOKEN:
+    raise ValueError("Помилка: BOT_TOKEN не знайдено у файлі .env!")
+
+# Ініціалізація бота та диспетчера
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
@@ -17,7 +27,7 @@ async def process_code(message: types.Message):
     code = message.text.strip().upper()
     
     if len(code) != 6:
-        await message.answer("Код має складатися з 6 символів. Спробуйте ще раз.")
+        await message.answer("Код має складатися з 6 symbols. Спробуйте ще раз.")
         return
 
     async with async_session() as session:
@@ -35,7 +45,6 @@ async def process_code(message: types.Message):
             await message.answer("❌ Невірний код. Перевірте його на сайті та спробуйте ще раз.")
 
 async def send_msg(user_id_site: int, text: str):
-
     async with async_session() as session:
         result = await session.execute(select(Users_in_telegram).filter_by(user_in_site=user_id_site))
         tg_user = result.scalars().first()
@@ -47,7 +56,6 @@ async def send_msg(user_id_site: int, text: str):
 
 async def notify_admins_new_problem(problem_id: int, problem_title: str):
     async with async_session() as session:
-
         admins_query = await session.execute(
             select(Users_in_telegram.user_tg_id)
             .join(User, User.id == Users_in_telegram.user_in_site)
