@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Нові заявки — Цитадель{% endblock %}
+{% block content %}
+<div class="card card-wide">
+    <h2>⚡ Нові Клопотання від Народу</h2>
+    {% if not problems %}
+    <div class="empty-state">
+        <div class="empty-state-icon">✅</div>
+        <p class="empty-state-text">Нових заявок немає</p>
+    </div>
+    {% else %}
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>#ID</th><th>Заголовок</th><th>Дія</th></tr></thead>
+            <tbody>
+                {% for p in problems %}
+                <tr>
+                    <td class="problem-id">#{{ p.id }}</td>
+                    <td class="problem-title">{{ p.title }}</td>
+                    <td><a href="/problem?problem_id={{ p.id }}" class="btn btn-sm">🔍 Вивчити</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Мої заявки — Цитадель{% endblock %}
+{% block content %}
+<style>
+    .empty-state { text-align:center; padding:3rem 1rem; color:var(--muted); }
+    .empty-state .icon { font-size:2.5rem; margin-bottom:1rem; opacity:0.4; }
+    .empty-state .cta { width:auto; margin-top:1rem; padding:10px 24px; }
+    .empty-state p { color:var(--muted); }
+    .title-cell { font-weight:500; }
+    .ml-6 { margin-left:6px; }
+</style>
+<div class="card card-wide">
+    <h2>📋 Мої Сувої</h2>
+    {% if not problems %}
+    <div class="empty-state">
+        <div class="icon">📭</div>
+        <p>Ви ще не подавали жодних заявок</p>
+        <a href="/add_my_problem" class="btn cta">Подати першу заявку</a>
+    </div>
+    {% else %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Тема</th><th>Статус</th><th>Дії</th></tr>
+            </thead>
+            <tbody>
+                {% for p in problems %}
+                <tr>
+                    <td class="title-cell">{{ p.title }}</td>
+                    <td><span class="status-cell">{{ p.status }}</span></td>
+                    <td>
+                        <a href="/check_message?id={{ p.id }}" class="btn btn-sm btn-ghost">👁 Переглянути</a>
+                        {% if p.status == 'Завершено' %}
+                        <a href="/service_record_review?id={{ p.id }}" class="btn btn-sm btn-success ml-6">📄 Талон</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

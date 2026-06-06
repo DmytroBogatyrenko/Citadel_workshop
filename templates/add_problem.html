@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Нова заявка — Цитадель{% endblock %}
+{% block content %}
+<style>
+    .ai-button-wrapper { margin: -5px 0 25px 0; }
+    .ai-button { background: #163820; color: #f4ebd0; border: 1px solid #a29061; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase; transition: all 0.3s ease; width: auto; display: inline-block; }
+    .ai-response-box { display: none; background-color: rgba(22, 56, 32, 0.4); border: 1px solid #a29061; padding: 20px; margin-bottom: 25px; border-radius: 6px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+    .ai-response-heading { margin-top: 0; color: #e2d4b7; display: flex; align-items: center; gap: 8px; font-size: 16px; border-bottom: 1px solid rgba(162, 144, 97, 0.3); padding-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .ai-response-corrected { margin-bottom: 20px; margin-top: 15px; }
+    .ai-response-corrected-label { margin-bottom: 8px; font-weight: bold; font-size: 13px; color: #a29061; text-transform: uppercase; }
+    .ai-response-corrected-text { font-style: italic; background: rgba(0, 0, 0, 0.3); padding: 14px; border: 1px dashed rgba(162, 144, 97, 0.5); border-radius: 4px; font-size: 14px; color: #f4ebd0; line-height: 1.6; margin-bottom: 10px; }
+    .ai-apply-btn { background-color: #2d6a4f; color: #f4ebd0; border: 1px solid #52b788; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; text-transform: uppercase; transition: background 0.2s; }
+    .ai-response-section { margin-bottom: 20px; }
+    .ai-response-section-label { margin-bottom: 6px; font-weight: bold; font-size: 13px; color: #a29061; text-transform: uppercase; }
+    .ai-response-list { margin-top: 4px; padding-left: 20px; font-size: 14px; color: #e2d4b7; line-height: 1.6; }
+    .ai-response-list li { margin-bottom: 4px; }
+    .ai-response-subsection { margin-bottom: 20px; margin-top: 15px; }
+    .ai-response-subsection-label { margin-bottom: 6px; font-weight: bold; font-size: 13px; color: #a29061; text-transform: uppercase; }
+    .ai-questions-label { margin-bottom: 6px; font-weight: bold; font-size: 13px; color: #a29061; text-transform: uppercase; }
+    .ai-questions-list { margin-top: 4px; padding-left: 20px; font-size: 14px; color: #e2d4b7; line-height: 1.6; }
+    .ai-questions-list li { margin-bottom: 4px; }
+    .submit-button { margin-top: 15px; }
+</style>
+<div class="card card-md">
+    <h2>📜 Створення Клопотання</h2>
+    {% if message %}<div class="msg msg-success">{{ message }}</div>{% endif %}
+    
+    <form method="post" enctype="multipart/form-data">
+        <label for="title">Коротка суть проблеми</label>
+        <input id="title" type="text" name="title" placeholder="Опишіть проблему одним реченням" required>
+        
+        <label for="description">Детальний опис</label>
+        <textarea id="description" name="description" placeholder="Надайте якомога більше деталей: що сталося, коли, які симптоми..." required class="textarea-large"></textarea>
+        
+        <!-- КНОПКА ШІ В СТИЛІ ЦИТАДЕЛІ -->
+        <div class="ai-button-wrapper">
+            <button type="button" id="ai-btn" class="ai-button">
+                ✨ Покликати ШІ-Помічника Магістрів
+            </button>
+        </div>
+
+        <!-- КРАСИВИЙ ТЕМНИЙ БЛОК ВІДПОВІДІ ШІ -->
+        <div id="ai-response-box" class="ai-response-box">
+            <h4 class="ai-response-heading">
+                🔮 Пророцтво та поради Асистента:
+            </h4>
+            
+            <!-- Рекомендований текст -->
+            <div class="ai-response-subsection">
+                <p class="ai-response-subsection-label">📝 Шляхетний опис (без помилок):</p>
+                <p id="ai-corrected-text" class="ai-response-corrected-text"></p>
+                <button type="button" id="ai-apply-btn" class="ai-apply-btn">
+                    📜 Застосувати цей опис
+                </button>
+            </div>
+
+            <!-- Рішення -->
+            <div class="ai-response-section">
+                <p class="ai-response-section-label">💡 Що можна вдіяти самостійно:</p>
+                <ul id="ai-solutions" class="ai-response-list"></ul>
+            </div>
+
+            <!-- Запитання -->
+            <div>
+                <p class="ai-questions-label">❓ Таємні уточнення (додайте у текст, якщо знаєте):</p>
+                <ul id="ai-questions" class="ai-questions-list"></ul>
+            </div>
+        </div>
+
+        <label for="img">Прикріпити файл (необов'язково)</label>
+        <input id="img" type="file" name="img" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf">
+        <p class="file-hint">Дозволені формати: jpg, png, gif, webp, pdf</p>
+        
+        <button type="submit" class="submit-button">📤 Відправити Магістрам</button>
+    </form>
+</div>
+
+<!-- СКРИПТ АНАЛІЗУ -->
+<script>
+document.getElementById('ai-btn').addEventListener('click', async function() {
+    const descInput = document.getElementById('description');
+    const aiButton = document.getElementById('ai-btn');
+    const responseBox = document.getElementById('ai-response-box');
+    const text = descInput.value.trim();
+
+    if (text.length < 10) {
+        alert("Будь ласка, напишіть хоча б кілька слів у детальному описі, щоб ШІ мав що аналізувати!");
+        return;
+    }
+
+    aiButton.disabled = true;
+    aiButton.style.opacity = "0.5";
+    aiButton.innerText = "🔮 Магічні алгоритми думають...";
+    responseBox.style.display = 'none';
+
+    try {
+        const response = await fetch('/api/analyze_ticket', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ description: text })
+        });
+
+        if (response.status === 401) {
+            alert("Помилка доступу. Будь ласка, увійдіть у свій акаунт заново.");
+            return;
+        }
+
+        if (response.ok) {
+            const data = await response.json();
+            
+            document.getElementById('ai-corrected-text').innerText = data.corrected_text;
+            
+            const solutionsList = document.getElementById('ai-solutions');
+            solutionsList.innerHTML = '';
+            if (data.solutions && data.solutions.length > 0) {
+                data.solutions.forEach(sol => { solutionsList.innerHTML += `<li style="margin-bottom: 4px;">${sol}</li>`; });
+            } else {
+                solutionsList.innerHTML = '<li>Варіантів для самостійного виправлення не знайдено.</li>';
+            }
+            
+            const questionsList = document.getElementById('ai-questions');
+            questionsList.innerHTML = '';
+            if (data.questions && data.questions.length > 0) {
+                data.questions.forEach(q => { questionsList.innerHTML += `<li style="margin-bottom: 4px;">${q}</li>`; });
+            } else {
+                questionsList.innerHTML = '<li>Додаткових питань немає, опис досконалий!</li>';
+            }
+            
+            responseBox.style.display = 'block';
+        } else {
+            const errorData = await response.json();
+            alert("Помилка Асистента: " + (errorData.detail || "Не вдалося отримати відповідь"));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert("Не вдалося зв'язатися з сервером аналізу.");
+    } finally {
+        aiButton.disabled = false;
+        aiButton.style.opacity = "1";
+        aiButton.innerText = "✨ Покликати ШІ-Помічника Магістрів";
+    }
+});
+
+document.getElementById('ai-apply-btn').addEventListener('click', function() {
+    const correctedText = document.getElementById('ai-corrected-text').innerText;
+    document.getElementById('description').value = correctedText;
+});
+</script>
+{% endblock %}

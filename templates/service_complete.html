@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Акт виконаних робіт — Цитадель{% endblock %}
+{% block content %}
+<div class="card card-md">
+    <h2>📄 Акт Виконаних Робіт</h2>
+    {% if message %}<div class="msg msg-success">{{ message }}</div>{% endif %}
+    <form method="post">
+        <input type="hidden" name="problem_id" value="{{ problem_id }}">
+        <label for="work_done">Виконаний обсяг робіт</label>
+        <textarea id="work_done" name="work_done" placeholder="Детально опишіть що було зроблено..." required class="textarea-lg"></textarea>
+        <label for="parts_used">Використані матеріали та ресурси</label>
+        <textarea id="parts_used" name="parts_used" placeholder="Перелічіть матеріали, деталі, компоненти..." class="textarea-md"></textarea>
+        <button type="submit" class="btn-success btn-complete">
+            ✅ Завершити Справу та Видати Гарантію
+        </button>
+    </form>
+</div>
+{% endblock %}
