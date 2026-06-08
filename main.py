@@ -68,16 +68,25 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 def get_current_user(access_token: str = Cookie(None)):
     if not access_token:
-        raise HTTPException(status_code=401, detail="Неавторизовано")
+        raise HTTPException(
+            status_code=307,
+            headers={"Location": "/login"}
+        )
     try:
-        payload  = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id  = payload.get("user_id")
-        role     = payload.get("role")
+        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("user_id")
+        role    = payload.get("role")
         if user_id is None or role is None:
-            raise HTTPException(status_code=401)
+            raise HTTPException(
+                status_code=307,
+                headers={"Location": "/login"}
+            )
         return user_id, role
     except jwt.PyJWTError:
-        raise HTTPException(status_code=401, detail="Недійсний токен")
+        raise HTTPException(
+            status_code=307,
+            headers={"Location": "/login"}
+        )
 
 def admin_required(user_data: tuple = Depends(get_current_user)):
     _, role = user_data
