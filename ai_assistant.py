@@ -4,7 +4,6 @@ from google import genai
 from google.genai import types
 from dotenv import load_dotenv
 
-# Завантажуємо змінні середовища (API ключ)
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
 

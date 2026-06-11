@@ -42,7 +42,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"]  = "nosniff"
         response.headers["Referrer-Policy"]         = "strict-origin-when-cross-origin"
         
-        # ЗАЛІЗОБЕТОННИЙ CSP: дозволяємо роботу інлайн-скриптів, шрифтів та fetch-запитів
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline'; "
@@ -87,6 +86,20 @@ def get_current_user(access_token: str = Cookie(None)):
             status_code=307,
             headers={"Location": "/login"}
         )
+        
+def get_current_user_optional(access_token: str = Cookie(None)):
+    """Повертає дані юзера або None — без редіректу, для шаблонів."""
+    if not access_token:
+        return None
+    try:
+        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("user_id")
+        role    = payload.get("role")
+        if user_id is None or role is None:
+            return None
+        return {"user_id": user_id, "role": role}
+    except jwt.PyJWTError:
+        return None        
 
 def admin_required(user_data: tuple = Depends(get_current_user)):
     _, role = user_data
@@ -95,8 +108,8 @@ def admin_required(user_data: tuple = Depends(get_current_user)):
     return True
 
 @app.get("/")
-async def home(request: Request):
-    return templates.TemplateResponse(request=request, name="index.html", context={})
+async def home(request: Request, user=Depends(get_current_user_optional)):
+    return templates.TemplateResponse(request=request, name="index.html", context={"current_user": user})
 
 @app.get("/register")
 async def register_get(request: Request):
@@ -221,12 +234,17 @@ async def add_problem_post(
 async def new_problems(
     request: Request,
     session: AsyncSession = Depends(get_session),
-    _:       bool = Depends(admin_required),
+    current_user: tuple = Depends(get_current_user),
 ):
+    if current_user[1] != "admin":
+        return templates.TemplateResponse(
+            request=request, name="access_denied.html",
+            context={"current_user": {"user_id": current_user[0], "role": current_user[1]}}
+        )
     result = await session.execute(select(Problem).filter_by(status="В обробці"))
     return templates.TemplateResponse(
         request=request, name="all_problems.html",
-        context={"problems": result.scalars().all()}
+        context={"problems": result.scalars().all(), "current_user": {"user_id": current_user[0], "role": current_user[1]}}
     )
 
 @app.get("/problem")
@@ -269,13 +287,29 @@ async def admin_problems(
     request:      Request,
     current_user: tuple = Depends(get_current_user),
     session:      AsyncSession = Depends(get_session),
-    _:            bool  = Depends(admin_required),
 ):
+    if current_user[1] != "admin":
+        return templates.TemplateResponse(
+            request=request, name="access_denied.html",
+            context={"current_user": {"user_id": current_user[0], "role": current_user[1]}}
+        )
     result = await session.execute(select(Problem).filter_by(admin_id=current_user[0]))
     return templates.TemplateResponse(
         request=request, name="admin_problems.html",
-        context={"problems": result.scalars().all()}
+        context={"problems": result.scalars().all(), "current_user": {"user_id": current_user[0], "role": current_user[1]}}
     )
+    
+@app.get("/admin/stats")
+async def admin_stats(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+    current_user: tuple = Depends(get_current_user),
+):
+    if current_user[1] != "admin":
+        return templates.TemplateResponse(
+            request=request, name="access_denied.html",
+            context={"current_user": {"user_id": current_user[0], "role": current_user[1]}}
+        )    
 
 @app.get("/add_answer")
 async def add_answer_get(
@@ -323,7 +357,8 @@ async def my_all_problems(
     result = await session.execute(select(Problem).filter_by(user_id=current_user[0]))
     return templates.TemplateResponse(
         request=request, name="all_my_problems.html",
-        context={"problems": result.scalars().all()}
+        context={"problems": result.scalars().all(), 
+                "current_user": {"user_id": current_user[0], "role": current_user[1]}}
     )
 
 @app.get("/check_message")

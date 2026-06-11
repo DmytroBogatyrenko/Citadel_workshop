@@ -6,15 +6,12 @@ from aiogram.filters import CommandStart
 from sqlalchemy.future import select
 from project_models import async_session, Users_in_telegram, User
 
-# Завантажуємо змінні середовища з файлу .env
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 
-# Перевірка, чи токен взагалі передався (щоб бот не падав із незрозумілою помилкою)
 if not TOKEN:
     raise ValueError("Помилка: BOT_TOKEN не знайдено у файлі .env!")
 
-# Ініціалізація бота та диспетчера
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
@@ -26,9 +23,9 @@ async def start_cmd(message: types.Message):
 async def process_code(message: types.Message):
     code = message.text.strip().upper()
     
-    if len(code) != 6:
-        await message.answer("Код має складатися з 6 symbols. Спробуйте ще раз.")
-        return
+    if len(code) < 6:
+            await message.answer("Код має бути не менше 6 символів. Спробуйте ще раз.")
+            return
 
     async with async_session() as session:
         result = await session.execute(select(Users_in_telegram).filter_by(tg_code=code))
