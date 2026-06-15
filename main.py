@@ -11,6 +11,7 @@ from fastapi import FastAPI, HTTPException, Depends, Request, Cookie, File, Form
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
+from urllib.parse import quote
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -73,19 +74,24 @@ def get_current_user(access_token: str = Cookie(None)):
         )
     try:
         payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("user_id")
-        role    = payload.get("role")
+        user_id  = payload.get("user_id")
+        role     = payload.get("role")
+        username = payload.get("username")
         if user_id is None or role is None:
             raise HTTPException(
                 status_code=307,
                 headers={"Location": "/login"}
             )
-        return user_id, role
+        return user_id, role, username
     except jwt.PyJWTError:
         raise HTTPException(
             status_code=307,
             headers={"Location": "/login"}
         )
+
+def build_user_context(current_user: tuple) -> dict:
+    return {"user_id": current_user[0], "role": current_user[1], "username": current_user[2] if len(current_user) > 2 else None}
+
 
 def get_current_user_optional(access_token: str = Cookie(None)):
     """Повертає дані юзера або None — без редіректу, для шаблонів."""
@@ -93,16 +99,17 @@ def get_current_user_optional(access_token: str = Cookie(None)):
         return None
     try:
         payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("user_id")
-        role    = payload.get("role")
+        user_id  = payload.get("user_id")
+        role     = payload.get("role")
+        username = payload.get("username")
         if user_id is None or role is None:
             return None
-        return {"user_id": user_id, "role": role}
+        return {"user_id": user_id, "role": role, "username": username}
     except jwt.PyJWTError:
         return None        
 
 def admin_required(user_data: tuple = Depends(get_current_user)):
-    _, role = user_data
+    role = user_data[1]
     if role != "admin":
         raise HTTPException(status_code=403, detail="Доступ лише для адміністраторів")
     return True
@@ -123,11 +130,17 @@ async def register_post(
     email:    str = Form(),
     session:  AsyncSession = Depends(get_session),
 ):
+    if len(password) < 6:
+        return templates.TemplateResponse(
+            request=request, name="register.html",
+            context={"message": "Пароль має містити щонайменше 6 символів.", "message_type": "error"}
+        )
+
     existing = await session.execute(select(User).filter(User.username == username))
     if existing.scalars().first():
         return templates.TemplateResponse(
             request=request, name="register.html",
-            context={"message": "Користувач з таким іменем вже існує."}
+            context={"message": "Користувач з таким іменем вже існує.", "message_type": "error"}
         )
 
     new_user = User(username=username, email=email, is_admin=False)
@@ -165,19 +178,26 @@ async def login_post(
     form_data: OAuth2PasswordRequestForm = Depends(),
     session:   AsyncSession = Depends(get_session),
 ):
+    if len(form_data.password) < 6:
+        return RedirectResponse(
+            url=f"/login?error={quote('Пароль має містити щонайменше 6 символів')}",
+            status_code=302,
+        )
+
     result = await session.execute(select(User).filter(User.username == form_data.username))
     user   = result.scalars().first()
 
     if not user or not bcrypt.checkpw(form_data.password.encode(), user.password.encode()):
         return RedirectResponse(
-            url="/login?error=Пароль або логін невірний, спробуйте ще раз",
+            url=f"/login?error={quote('Пароль або логін невірний, спробуйте ще раз')}",
             status_code=302,
         )
 
     token_data = {
-        "user_id": user.id,
-        "role":    "admin" if user.is_admin else "user",
-        "exp":     datetime.utcnow() + timedelta(hours=72),
+        "user_id":  user.id,
+        "username": user.username,
+        "role":     "admin" if user.is_admin else "user",
+        "exp":      datetime.utcnow() + timedelta(hours=72),
     }
     token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -192,7 +212,7 @@ async def login_post(
 async def add_problem_get(request: Request, current_user: tuple = Depends(get_current_user)):
     return templates.TemplateResponse(
         request=request, name="add_problem.html", 
-        context={"current_user": {"user_id": current_user[0], "role": current_user[1]}}
+        context={"current_user": build_user_context(current_user)}
     )
 
 @app.post("/add_my_problem")
@@ -213,7 +233,7 @@ async def add_problem_post(
                 request=request, name="add_problem.html",
                 context={
                     "message": "Недозволений тип файлу. Дозволені: jpg, png, gif, webp, pdf.",
-                    "current_user": {"user_id": current_user[0], "role": current_user[1]}
+                    "current_user": build_user_context(current_user)
                 }
             )
         safe_name     = secrets.token_hex(8) + ext
@@ -235,7 +255,7 @@ async def add_problem_post(
         request=request, name="add_problem.html",
         context={
             "message": f'Проблема: "{title}" записана!',
-            "current_user": {"user_id": current_user[0], "role": current_user[1]}
+            "current_user": build_user_context(current_user)
         }
     )
 
@@ -249,7 +269,7 @@ async def new_problems(
         return templates.TemplateResponse(
             request=request, name="index.html",
             context={
-                "current_user": {"user_id": current_user[0], "role": current_user[1]},
+                "current_user": build_user_context(current_user),
                 "toast_message": "Ця зала лише для Магістрів Ордену!",
                 "toast_type": "error"
             }
@@ -259,7 +279,7 @@ async def new_problems(
         request=request, name="all_problems.html",
         context={
             "problems": result.scalars().all(), 
-            "current_user": {"user_id": current_user[0], "role": current_user[1]}
+            "current_user": build_user_context(current_user)
         }
     )
 
@@ -298,7 +318,7 @@ async def problem_post(
         context={
             "problem": problem, 
             "message": "Заявку взято в роботу!",
-            "current_user": {"user_id": current_user[0], "role": current_user[1]}
+            "current_user": build_user_context(current_user)
         }
     )
 
@@ -312,7 +332,7 @@ async def admin_problems(
         return templates.TemplateResponse(
             request=request, name="index.html",
             context={
-                "current_user": {"user_id": current_user[0], "role": current_user[1]},
+                "current_user": build_user_context(current_user),
                 "toast_message": "Ця зала лише для Магістрів Ордену!",
                 "toast_type": "error"
             }
@@ -322,7 +342,7 @@ async def admin_problems(
         request=request, name="admin_problems.html",
         context={
             "problems": result.scalars().all(), 
-            "current_user": {"user_id": current_user[0], "role": current_user[1]}
+            "current_user": build_user_context(current_user)
         }
     )
 
@@ -362,7 +382,7 @@ async def add_answer_post(
         context={
             "message": "Відповідь збережена!", 
             "id": problem_id,
-            "current_user": {"user_id": current_user[0], "role": current_user[1]}
+            "current_user": build_user_context(current_user)
         }
     )
 
@@ -378,7 +398,7 @@ async def my_all_problems(
         request=request, name="all_my_problems.html",
         context={
             "problems": result.scalars().all(), 
-            "current_user": {"user_id": current_user[0], "role": current_user[1]}
+            "current_user": build_user_context(current_user)
         }
     )
 
@@ -396,7 +416,7 @@ async def check_message(
         context={
             "problem": problem.scalars().one_or_none(),
             "answer":  answer.scalars().one_or_none(),
-            "current_user": {"user_id": current_user[0], "role": current_user[1]}
+            "current_user": build_user_context(current_user)
         }
     )
 
@@ -458,7 +478,7 @@ async def service_record_review(
         context={
             "problem":        problem.scalars().one_or_none(),
             "service_record": service_record.scalars().one_or_none(),
-            "current_user": {"user_id": current_user[0], "role": current_user[1]}
+            "current_user": build_user_context(current_user)
         }
     )
 
@@ -472,7 +492,7 @@ async def admin_stats(
         return templates.TemplateResponse(
             request=request, name="index.html",
             context={
-                "current_user": {"user_id": current_user[0], "role": current_user[1]},
+                "current_user": build_user_context(current_user),
                 "toast_message": "Ця зала лише для Магістрів Ордену!",
                 "toast_type": "error"
             }
@@ -506,7 +526,7 @@ async def admin_stats(
             "stats": stats, 
             "active_count": active_count, 
             "avg_time": avg_time_str,
-            "current_user": {"user_id": current_user[0], "role": current_user[1]}
+            "current_user": build_user_context(current_user)
         }
     )
 
@@ -527,7 +547,7 @@ async def reviews_get(
         context={
             "reviews": reviews, 
             "can_leave_review": can_leave_review,
-            "current_user": {"user_id": current_user[0], "role": current_user[1]}
+            "current_user": build_user_context(current_user)
         }
     )
 

@@ -34,6 +34,80 @@
         }
 
         /* ══════════════════════════════════════
+           TOAST NOTIFICATIONS
+        ══════════════════════════════════════ */
+        #toast-container {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            pointer-events: none;
+            width: 100%;
+            max-width: 480px;
+            padding: 0 16px;
+        }
+        .toast {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            pointer-events: all;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            animation: toastIn 0.35s cubic-bezier(.21,1.02,.73,1) both;
+            backdrop-filter: blur(8px);
+            cursor: pointer;
+        }
+        .toast.hiding {
+            animation: toastOut 0.3s ease forwards;
+        }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateY(-16px) scale(0.95); }
+            to   { opacity: 1; transform: translateY(0)     scale(1); }
+        }
+        @keyframes toastOut {
+            from { opacity: 1; transform: translateY(0)     scale(1); }
+            to   { opacity: 0; transform: translateY(-10px) scale(0.95); }
+        }
+        .toast-error {
+            background: rgba(80, 10, 10, 0.92);
+            border: 1px solid rgba(220,60,60,0.45);
+            color: #ffcdd2;
+        }
+        .toast-success {
+            background: rgba(10, 50, 18, 0.92);
+            border: 1px solid rgba(76,175,80,0.4);
+            color: #c8e6c9;
+        }
+        .toast-info {
+            background: rgba(10, 30, 60, 0.92);
+            border: 1px solid rgba(33,150,243,0.4);
+            color: #bbdefb;
+        }
+        .toast-warn {
+            background: rgba(60, 35, 5, 0.95);
+            border: 1px solid rgba(201,168,76,0.45);
+            color: var(--gold-lt);
+        }
+        .toast-icon { font-size: 1.1rem; flex-shrink: 0; }
+        .toast-msg  { flex: 1; line-height: 1.4; }
+        .toast-close {
+            flex-shrink: 0;
+            opacity: 0.5;
+            font-size: 0.85rem;
+            transition: opacity 0.2s;
+        }
+        .toast:hover .toast-close { opacity: 1; }
+
+        /* ══════════════════════════════════════
            NEWS TICKER
         ══════════════════════════════════════ */
         .ticker-bar {
@@ -59,23 +133,14 @@
             align-items: center;
             z-index: 2;
         }
-        .ticker-label::after {
-            content: '';
-            position: absolute;
-            left: calc(14px * 2 + 4ch + 14px);
-            top: 0; bottom: 0;
-            width: 24px;
-            background: linear-gradient(90deg, var(--gold-dk), transparent);
-        }
         .ticker-track {
             flex: 1;
             overflow: hidden;
-            -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%);
             mask-image: linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%);
+            -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%);
         }
         .ticker-inner {
             display: flex;
-            gap: 0;
             animation: ticker 38s linear infinite;
             white-space: nowrap;
         }
@@ -99,15 +164,11 @@
             background: var(--gold-dk);
             flex-shrink: 0;
         }
-        .ticker-item a {
-            color: var(--gold);
-            text-decoration: none;
-            transition: color 0.2s;
-        }
+        .ticker-item a { color: var(--gold); text-decoration: none; transition: color 0.2s; }
         .ticker-item a:hover { color: var(--gold-lt); }
 
         /* ══════════════════════════════════════
-           TOP NAV BAR
+           TOPBAR
         ══════════════════════════════════════ */
         .topbar {
             background: linear-gradient(180deg, #020a04 0%, var(--deep) 100%);
@@ -125,8 +186,6 @@
             height: 54px;
             gap: 12px;
         }
-
-        /* Logo */
         .logo {
             display: flex;
             flex-direction: column;
@@ -149,7 +208,7 @@
             margin-top: 2px;
         }
 
-        /* Horizontal quick-links (center) */
+        /* Nav quick links */
         .nav-quick {
             display: flex;
             align-items: center;
@@ -157,6 +216,7 @@
             flex: 1;
             overflow-x: auto;
             padding: 0 12px;
+            scrollbar-width: none;
             -ms-overflow-style: none;
         }
         .nav-quick::-webkit-scrollbar { display: none; }
@@ -175,8 +235,8 @@
             border: 1px solid transparent;
             position: relative;
             overflow: hidden;
+            white-space: nowrap;
         }
-        /* ripple container */
         .nav-quick a::after {
             content: '';
             position: absolute;
@@ -185,46 +245,81 @@
             background: radial-gradient(circle at var(--rx,50%) var(--ry,50%), rgba(201,168,76,0.35) 0%, transparent 70%);
             opacity: 0;
             transition: opacity 0.4s;
+            pointer-events: none;
         }
-        .nav-quick a:hover {
-            color: var(--gold-lt);
-            background: rgba(201,168,76,0.1);
-            border-color: rgba(201,168,76,0.3);
-            transform: translateY(-1px);
-        }
+        .nav-quick a:hover { color: var(--gold-lt); background: rgba(201,168,76,0.1); border-color: rgba(201,168,76,0.3); transform: translateY(-1px); }
         .nav-quick a:hover::after { opacity: 1; }
-        .nav-quick a:active {
-            transform: scale(0.95) translateY(0);
-        }
-        .nav-quick a.active-link {
-            color: var(--gold);
-            background: rgba(201,168,76,0.12);
-            border-color: rgba(201,168,76,0.4);
-        }
+        .nav-quick a:active { transform: scale(0.95) translateY(0); }
+        .nav-quick a.active-link { color: var(--gold); background: rgba(201,168,76,0.12); border-color: rgba(201,168,76,0.4); }
         .nav-quick a.admin-link { color: rgba(160,210,170,0.65); }
-        .nav-quick a.admin-link:hover {
-            color: #a5d6a7;
-            background: rgba(42,107,53,0.2);
-            border-color: rgba(42,107,53,0.4);
-        }
+        .nav-quick a.admin-link:hover { color: #a5d6a7; background: rgba(42,107,53,0.2); border-color: rgba(42,107,53,0.4); }
 
-        .nav-sep {
-            width: 1px;
-            height: 16px;
-            background: rgba(201,168,76,0.2);
+        .user-pill {
             flex-shrink: 0;
-            margin: 0 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border: 1px solid rgba(42,107,53,0.45);
+            border-radius: 20px;
+            background: rgba(42,107,53,0.18);
+            color: #a5d6a7;
+            font-size: 0.78rem;
+            font-weight: 600;
+            white-space: nowrap;
         }
+        .user-pill strong { color: var(--gold-lt); }
 
-        /* Burger button */
+        .nav-sep { width: 1px; height: 16px; background: rgba(201,168,76,0.2); flex-shrink: 0; margin: 0 6px; }
+
+        /* User badge in nav */
+        .nav-user-badge {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gold);
+            border: 1px solid rgba(201,168,76,0.35);
+            background: rgba(201,168,76,0.07);
+            white-space: nowrap;
+        }
+        .nav-user-badge .role-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--gold);
+            flex-shrink: 0;
+        }
+        .nav-user-badge .role-dot.is-admin { background: #a5d6a7; }
+
+        /* Nav logout button */
+        .nav-logout-form { display: inline-flex; margin: 0; }
+        .btn-nav-logout {
+            all: unset;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: rgba(220,150,150,0.65);
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-nav-logout:hover { color: #ef9a9a; background: rgba(139,32,32,0.2); border-color: rgba(220,80,80,0.3); }
+
+        /* Burger */
         .burger {
             flex-shrink: 0;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            width: 40px; height: 40px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
             gap: 5px;
             cursor: pointer;
             background: transparent;
@@ -237,81 +332,52 @@
         }
         .burger::before {
             content: '';
-            position: absolute;
-            inset: 0;
+            position: absolute; inset: 0;
             background: radial-gradient(circle at 50% 50%, rgba(201,168,76,0.3) 0%, transparent 70%);
-            opacity: 0;
-            transition: opacity 0.3s;
+            opacity: 0; transition: opacity 0.3s;
         }
         .burger:hover { border-color: var(--gold); }
         .burger:hover::before { opacity: 1; }
-        .burger-line {
-            width: 18px;
-            height: 1.5px;
-            background: var(--gold);
-            border-radius: 2px;
-            transition: all 0.3s cubic-bezier(.4,0,.2,1);
-            transform-origin: center;
-        }
+        .burger-line { width: 18px; height: 1.5px; background: var(--gold); border-radius: 2px; transition: all 0.3s cubic-bezier(.4,0,.2,1); transform-origin: center; }
         .burger.open .burger-line:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
         .burger.open .burger-line:nth-child(2) { opacity: 0; transform: scaleX(0); }
         .burger.open .burger-line:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
 
         /* ══════════════════════════════════════
-           FULLSCREEN MENU OVERLAY
+           FULLSCREEN OVERLAY
         ══════════════════════════════════════ */
         .overlay {
-            position: fixed;
-            inset: 0;
+            position: fixed; inset: 0;
             z-index: 200;
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.35s ease;
         }
-        .overlay.open {
-            opacity: 1;
-            pointer-events: all;
-        }
-        /* Backdrop */
+        .overlay.open { opacity: 1; pointer-events: all; }
         .overlay-bg {
-            position: absolute;
-            inset: 0;
+            position: absolute; inset: 0;
             background: rgba(2,8,3,0.96);
-            -webkit-backdrop-filter: blur(12px);
             backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
         }
-        /* Decorative corner lines */
-        .overlay-deco {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            overflow: hidden;
-        }
+        .overlay-deco { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
         .overlay-deco::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0;
+            content: ''; position: absolute; top: 0; left: 0;
             width: 240px; height: 240px;
             border-top: 1px solid rgba(201,168,76,0.15);
             border-left: 1px solid rgba(201,168,76,0.15);
         }
         .overlay-deco::after {
-            content: '';
-            position: absolute;
-            bottom: 0; right: 0;
+            content: ''; position: absolute; bottom: 0; right: 0;
             width: 240px; height: 240px;
             border-bottom: 1px solid rgba(201,168,76,0.15);
             border-right: 1px solid rgba(201,168,76,0.15);
         }
-
-        /* Close button */
         .overlay-close {
-            position: absolute;
-            top: 20px; right: 20px;
+            position: absolute; top: 20px; right: 20px;
             width: 44px; height: 44px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.4rem;
-            color: var(--muted);
+            font-size: 1.4rem; color: var(--muted);
             cursor: pointer;
             border: 1px solid rgba(201,168,76,0.2);
             border-radius: 50%;
@@ -321,126 +387,77 @@
         }
         .overlay-close:hover { color: var(--gold-lt); border-color: var(--gold); transform: rotate(90deg); }
 
-        /* Overlay content */
         .overlay-content {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0;
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
             padding: 60px 24px;
             overflow-y: auto;
         }
-        .overlay-logo {
-            font-family: 'Cinzel', serif;
-            font-size: 0.7rem;
-            letter-spacing: 0.3em;
-            color: var(--gold-dk);
-            text-transform: uppercase;
-            margin-bottom: 2.5rem;
-        }
 
-        /* Section title */
-        .overlay-section {
-            font-size: 0.6rem;
-            letter-spacing: 0.25em;
-            text-transform: uppercase;
-            color: var(--gold-dk);
-            margin: 1.5rem 0 0.5rem;
-            text-align: center;
-        }
-
-        /* Big menu items */
-        .overlay-item {
+        /* Logged-in user block inside overlay */
+        .overlay-user-block {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 14px;
-            padding: 10px 40px;
-            text-decoration: none;
-            position: relative;
-            cursor: pointer;
-            transition: all 0.25s;
-            border-radius: 4px;
-            overflow: hidden;
+            gap: 12px;
+            padding: 12px 24px;
+            background: rgba(201,168,76,0.06);
+            border: 1px solid rgba(201,168,76,0.18);
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
             width: 100%;
             max-width: 420px;
         }
+        .overlay-user-avatar {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: rgba(201,168,76,0.15);
+            border: 1px solid rgba(201,168,76,0.3);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        .overlay-user-name { font-family: 'Cinzel', serif; font-size: 0.9rem; color: var(--gold-lt); }
+        .overlay-user-role { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.08em; }
+
+        .overlay-logo { font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.3em; color: var(--gold-dk); text-transform: uppercase; margin-bottom: 2rem; }
+        .overlay-section { font-size: 0.6rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--gold-dk); margin: 1.25rem 0 0.4rem; text-align: center; }
+
+        .overlay-item {
+            display: flex; align-items: center; justify-content: center;
+            gap: 14px; padding: 10px 40px;
+            text-decoration: none;
+            position: relative; cursor: pointer;
+            transition: all 0.25s;
+            border-radius: 4px; overflow: hidden;
+            width: 100%; max-width: 420px;
+        }
         .overlay-item::before {
-            content: '';
-            position: absolute;
-            left: 0; right: 0;
-            top: 50%; bottom: 50%;
+            content: ''; position: absolute; left: 0; right: 0; top: 50%; bottom: 50%;
             background: rgba(201,168,76,0.07);
             transition: top 0.25s, bottom 0.25s;
             border-radius: 4px;
         }
         .overlay-item:hover::before { top: 0; bottom: 0; }
-        /* gold line left that grows on hover */
         .overlay-item::after {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%; bottom: 50%;
-            width: 2px;
-            background: var(--gold);
+            content: ''; position: absolute; left: 0; top: 50%; bottom: 50%;
+            width: 2px; background: var(--gold);
             transition: top 0.25s, bottom 0.25s;
             border-radius: 2px;
         }
         .overlay-item:hover::after { top: 10%; bottom: 10%; }
-
-        .overlay-item-icon {
-            font-size: 1.1rem;
-            width: 28px;
-            text-align: center;
-            flex-shrink: 0;
-            transition: transform 0.25s;
-        }
+        .overlay-item-icon { font-size: 1.1rem; width: 28px; text-align: center; flex-shrink: 0; transition: transform 0.25s; }
         .overlay-item:hover .overlay-item-icon { transform: scale(1.2) rotate(-5deg); }
-
-        .overlay-item-text {
-            font-family: 'Cinzel', serif;
-            font-size: 1.3rem;
-            font-weight: 600;
-            letter-spacing: 0.06em;
-            color: rgba(245,240,232,0.7);
-            transition: color 0.25s;
-        }
+        .overlay-item-text { font-family: 'Cinzel', serif; font-size: 1.3rem; font-weight: 600; letter-spacing: 0.06em; color: rgba(245,240,232,0.7); transition: color 0.25s; }
         .overlay-item:hover .overlay-item-text { color: var(--gold-lt); }
-
-        .overlay-item-desc {
-            font-size: 0.72rem;
-            color: var(--muted);
-            margin-left: auto;
-            letter-spacing: 0.04em;
-            transition: color 0.25s;
-            flex-shrink: 0;
-        }
+        .overlay-item-desc { font-size: 0.72rem; color: var(--muted); margin-left: auto; letter-spacing: 0.04em; transition: color 0.25s; flex-shrink: 0; }
         .overlay-item:hover .overlay-item-desc { color: rgba(201,168,76,0.6); }
-
-        .overlay-divider {
-            width: 60px;
-            height: 1px;
-            background: rgba(201,168,76,0.2);
-            margin: 0.75rem 0;
-        }
-
-        /* Admin items */
+        .overlay-divider { width: 60px; height: 1px; background: rgba(201,168,76,0.2); margin: 0.75rem 0; }
         .overlay-item.is-admin .overlay-item-text { color: rgba(160,210,170,0.6); }
         .overlay-item.is-admin:hover .overlay-item-text { color: #a5d6a7; }
         .overlay-item.is-admin::after { background: #4caf50; }
 
-        /* Logout */
-        .overlay-item.is-logout .overlay-item-text { color: rgba(220,150,150,0.6); }
-        .overlay-item.is-logout:hover .overlay-item-text { color: #ef9a9a; }
-        .overlay-item.is-logout::after { background: #e53935; }
-
-        /* Overlay appear animation for items */
-        .overlay.open .overlay-item {
-            animation: slideIn 0.4s ease both;
-        }
+        .overlay.open .overlay-item { animation: slideIn 0.4s ease both; }
         .overlay.open .overlay-item:nth-child(1)  { animation-delay: 0.03s; }
         .overlay.open .overlay-item:nth-child(2)  { animation-delay: 0.06s; }
         .overlay.open .overlay-item:nth-child(3)  { animation-delay: 0.09s; }
@@ -450,105 +467,49 @@
         .overlay.open .overlay-item:nth-child(7)  { animation-delay: 0.21s; }
         .overlay.open .overlay-item:nth-child(8)  { animation-delay: 0.24s; }
         .overlay.open .overlay-item:nth-child(9)  { animation-delay: 0.27s; }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-20px); }
-            to   { opacity: 1; transform: translateX(0); }
-        }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
 
-        /* Overlay logout form */
-        .overlay-logout-form { width: 100%; max-width: 420px; }
+        .overlay-logout-form { width: 100%; max-width: 420px; margin-top: 0.25rem; }
         .overlay-logout-form button {
-            all: unset;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 14px;
-            padding: 10px 40px;
-            position: relative;
-            cursor: pointer;
-            transition: all 0.25s;
-            border-radius: 4px;
-            overflow: hidden;
-            width: 100%;
+            all: unset; display: flex; align-items: center; justify-content: center;
+            gap: 14px; padding: 10px 40px;
+            position: relative; cursor: pointer;
+            transition: all 0.25s; border-radius: 4px; overflow: hidden; width: 100%;
         }
         .overlay-logout-form button::before {
-            content: '';
-            position: absolute;
-            left: 0; right: 0;
-            top: 50%; bottom: 50%;
+            content: ''; position: absolute; left: 0; right: 0; top: 50%; bottom: 50%;
             background: rgba(220,80,80,0.06);
-            transition: top 0.25s, bottom 0.25s;
-            border-radius: 4px;
+            transition: top 0.25s, bottom 0.25s; border-radius: 4px;
         }
         .overlay-logout-form button:hover::before { top: 0; bottom: 0; }
         .overlay-logout-form button::after {
-            content: '';
-            position: absolute;
-            left: 0; top: 50%; bottom: 50%;
-            width: 2px;
-            background: #e53935;
+            content: ''; position: absolute; left: 0; top: 50%; bottom: 50%;
+            width: 2px; background: #e53935;
             transition: top 0.25s, bottom 0.25s;
         }
         .overlay-logout-form button:hover::after { top: 10%; bottom: 10%; }
         .overlay-logout-form .btn-icon { font-size: 1.1rem; width: 28px; text-align: center; transition: transform 0.25s; }
         .overlay-logout-form button:hover .btn-icon { transform: scale(1.2) rotate(-5deg); }
-        .overlay-logout-form .btn-label {
-            font-family: 'Cinzel', serif;
-            font-size: 1.3rem;
-            font-weight: 600;
-            letter-spacing: 0.06em;
-            color: rgba(220,150,150,0.6);
-            transition: color 0.25s;
-        }
+        .overlay-logout-form .btn-label { font-family: 'Cinzel', serif; font-size: 1.3rem; font-weight: 600; letter-spacing: 0.06em; color: rgba(220,150,150,0.6); transition: color 0.25s; }
         .overlay-logout-form button:hover .btn-label { color: #ef9a9a; }
 
         /* ══════════════════════════════════════
-           MAIN CONTENT
+           MAIN
         ══════════════════════════════════════ */
-        main {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 48px 24px;
-            position: relative;
-            z-index: 1;
-        }
+        main { flex: 1; display: flex; justify-content: center; align-items: flex-start; padding: 48px 24px; position: relative; z-index: 1; }
 
         /* ══════════════════════════════════════
-           CARDS & LAYOUT
+           CARDS
         ══════════════════════════════════════ */
-        .card {
-            background: var(--panel);
-            border: 1px solid rgba(201,168,76,0.22);
-            border-radius: 16px;
-            padding: 2.5rem;
-            width: 100%;
-            max-width: 500px;
-            box-shadow: 0 8px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(201,168,76,0.08);
-            animation: fadeUp 0.4s ease both;
-        }
+        .card { background: var(--panel); border: 1px solid rgba(201,168,76,0.22); border-radius: 16px; padding: 2.5rem; width: 100%; max-width: 500px; box-shadow: 0 8px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(201,168,76,0.08); animation: fadeUp 0.4s ease both; }
         .card-wide { max-width: 980px; }
         .card-md   { max-width: 680px; }
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(14px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
 
         /* ══════════════════════════════════════
            TYPOGRAPHY
         ══════════════════════════════════════ */
-        h1, h2 {
-            font-family: 'Cinzel', serif;
-            color: var(--gold-lt);
-            font-size: 1.45rem;
-            font-weight: 600;
-            text-align: center;
-            letter-spacing: 0.05em;
-            padding-bottom: 1rem;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid rgba(201,168,76,0.18);
-        }
+        h1, h2 { font-family: 'Cinzel', serif; color: var(--gold-lt); font-size: 1.45rem; font-weight: 600; text-align: center; letter-spacing: 0.05em; padding-bottom: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(201,168,76,0.18); }
         h1 { font-size: 1.8rem; }
         h3 { font-family: 'Cinzel', serif; color: var(--gold); font-size: 0.95rem; font-weight: 600; margin: 1.5rem 0 0.75rem; letter-spacing: 0.04em; }
         h4 { color: var(--muted); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin: 1rem 0 0.5rem; }
@@ -558,24 +519,8 @@
            FORMS
         ══════════════════════════════════════ */
         label { display: block; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 1.2rem 0 0.4rem; }
-        input[type=text], input[type=email], input[type=password],
-        input[type=datetime-local], input[type=number], input[type=file],
-        textarea, select {
-            width: 100%;
-            padding: 11px 14px;
-            background: rgba(0,0,0,0.3);
-            border: 1px solid rgba(201,168,76,0.2);
-            border-radius: 8px;
-            color: var(--parch);
-            font-family: 'Raleway', sans-serif;
-            font-size: 0.9rem;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            outline: none;
-        }
-        input:focus, textarea:focus, select:focus {
-            border-color: var(--gold);
-            box-shadow: 0 0 0 3px rgba(201,168,76,0.12);
-        }
+        input[type=text], input[type=email], input[type=password], input[type=datetime-local], input[type=number], input[type=file], textarea, select { width: 100%; padding: 11px 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(201,168,76,0.2); border-radius: 8px; color: var(--parch); font-family: 'Raleway', sans-serif; font-size: 0.9rem; transition: border-color 0.2s, box-shadow 0.2s; outline: none; }
+        input:focus, textarea:focus, select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12); }
         input::placeholder, textarea::placeholder { color: rgba(160,144,112,0.45); }
         textarea { min-height: 110px; resize: vertical; }
         select { cursor: pointer; }
@@ -584,49 +529,13 @@
         /* ══════════════════════════════════════
            BUTTONS
         ══════════════════════════════════════ */
-        .btn, button[type=submit] {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-            padding: 12px 20px;
-            background: linear-gradient(135deg, var(--gold-dk) 0%, var(--gold) 100%);
-            color: var(--ink);
-            border: none;
-            border-radius: 8px;
-            font-family: 'Cinzel', serif;
-            font-size: 0.88rem;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            cursor: pointer;
-            text-decoration: none;
-            text-align: center;
-            margin-top: 1.25rem;
-            transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        .btn::after, button[type=submit]::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at var(--rx,50%) var(--ry,50%), rgba(255,255,255,0.25) 0%, transparent 65%);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
+        .btn, button[type=submit] { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px 20px; background: linear-gradient(135deg, var(--gold-dk) 0%, var(--gold) 100%); color: var(--ink); border: none; border-radius: 8px; font-family: 'Cinzel', serif; font-size: 0.88rem; font-weight: 700; letter-spacing: 0.05em; cursor: pointer; text-decoration: none; text-align: center; margin-top: 1.25rem; transition: all 0.2s ease; position: relative; overflow: hidden; }
+        .btn::after, button[type=submit]::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at var(--rx,50%) var(--ry,50%), rgba(255,255,255,0.25) 0%, transparent 65%); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
         .btn:hover::after, button[type=submit]:hover::after { opacity: 1; }
-        .btn:hover, button[type=submit]:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 24px rgba(201,168,76,0.35);
-        }
+        .btn:hover, button[type=submit]:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(201,168,76,0.35); }
         .btn:active, button[type=submit]:active { transform: scale(0.97); }
-
         .btn-sm { width: auto; padding: 5px 13px; font-size: 0.73rem; margin-top: 0; border-radius: 6px; }
-        .btn-ghost {
-            background: transparent; color: var(--gold);
-            border: 1px solid rgba(201,168,76,0.35);
-        }
+        .btn-ghost { background: transparent; color: var(--gold); border: 1px solid rgba(201,168,76,0.35); }
         .btn-ghost:hover { background: rgba(201,168,76,0.08); color: var(--gold-lt); }
         .btn-success { background: linear-gradient(135deg, #1a5c27, #2a7d38); color: #c8f0d0; }
         .btn-success:hover { background: linear-gradient(135deg, #2a7d38, #3a9d4a); color: #fff; }
@@ -647,27 +556,44 @@
         .inline-form { display: inline-flex; margin: 0; }
 
         /* ══════════════════════════════════════
-           BADGES & STATUS
+           BADGES
         ══════════════════════════════════════ */
         .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; }
         .badge-pending  { background: rgba(201,168,76,0.15); color: var(--gold-lt);  border: 1px solid rgba(201,168,76,0.3); }
         .badge-working  { background: rgba(25,118,210,0.15); color: #90caf9;          border: 1px solid rgba(25,118,210,0.3); }
         .badge-answered { background: rgba(42,107,53,0.2);   color: #a5d6a7;          border: 1px solid rgba(42,107,53,0.4); }
-        .badge-done     { background: rgba(100,100,100,0.15); color: #bdbdbd;         border: 1px solid rgba(150,150,150,0.2); }
+        .badge-done     { background: rgba(100,100,100,0.15);color: #bdbdbd;           border: 1px solid rgba(150,150,150,0.2); }
 
         /* ══════════════════════════════════════
-           MESSAGES
+           MESSAGES (inline)
         ══════════════════════════════════════ */
         .msg { padding: 11px 15px; border-radius: 8px; font-size: 0.87rem; margin: 0.75rem 0; }
         .msg-success { background: rgba(42,107,53,0.2);  color: #a5d6a7; border-left: 3px solid #4caf50; }
-        .msg-info    { background: rgba(25,118,210,0.15); color: #90caf9; border-left: 3px solid #1976d2; }
+        .msg-info    { background: rgba(25,118,210,0.15);color: #90caf9;  border-left: 3px solid #1976d2; }
         .msg-error   { background: rgba(139,32,32,0.2);  color: #ef9a9a; border-left: 3px solid #e53935; }
-
+        .toast {
+            position: fixed;
+            top: 92px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 300;
+            width: min(92vw, 560px);
+            padding: 14px 18px;
+            border-radius: 12px;
+            border: 1px solid rgba(201,168,76,0.32);
+            background: linear-gradient(135deg, rgba(17,41,24,0.98), rgba(8,31,14,0.98));
+            box-shadow: 0 12px 36px rgba(0,0,0,0.5);
+            color: var(--parch);
+            text-align: center;
+            animation: toastIn 0.35s ease both;
+        }
+        .toast-error { border-color: rgba(229,57,53,0.55); color: #ffcdd2; }
+        @keyframes toastIn { from { opacity: 0; transform: translate(-50%, -14px); } to { opacity: 1; transform: translate(-50%, 0); } }
         .answer-block { background: rgba(42,107,53,0.14); border: 1px solid rgba(42,107,53,0.28); border-radius: 10px; padding: 1rem 1.25rem; font-style: italic; color: #c8e6c9; line-height: 1.75; }
         .answer-empty { color: var(--muted); font-style: italic; font-size: 0.9rem; }
 
         /* ══════════════════════════════════════
-           STAT CARDS
+           STATS
         ══════════════════════════════════════ */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 2rem; }
         .stat-card { background: rgba(0,0,0,0.22); border: 1px solid rgba(201,168,76,0.13); border-radius: 10px; padding: 1.1rem 1rem; text-align: center; transition: border-color 0.2s, transform 0.2s; }
@@ -681,17 +607,22 @@
         .review-card:hover { border-left-color: var(--gold); }
         .review-text { color: rgba(245,240,232,0.88); line-height: 1.7; margin-bottom: 8px; }
         .review-meta { font-size: 0.73rem; color: var(--muted); }
-
         .warranty-block { background: rgba(201,168,76,0.07); border: 1px solid rgba(201,168,76,0.22); border-radius: 10px; padding: 1rem 1.25rem; font-family: monospace; font-size: 0.84rem; color: var(--gold-lt); white-space: pre-wrap; line-height: 1.7; }
         .service-detail { background: rgba(0,0,0,0.18); border-radius: 8px; padding: 0.75rem 1rem; color: rgba(245,240,232,0.83); font-size: 0.9rem; line-height: 1.6; margin-bottom: 0.5rem; }
 
-        /* ══════════════════════════════════════
-           FOOTER
-        ══════════════════════════════════════ */
         footer { text-align: center; padding: 20px; color: rgba(160,144,112,0.35); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; border-top: 1px solid rgba(201,168,76,0.07); position: relative; z-index: 1; }
     </style>
 </head>
 <body>
+
+<!-- ═══ TOAST CONTAINER ═══ -->
+<div id="toast-container"></div>
+
+{% if toast_message %}
+<script>
+    window.__initToast = { msg: {{ toast_message | tojson }}, type: "{{ toast_type | default('warn') }}" };
+</script>
+{% endif %}
 
 <!-- ═══ TICKER ═══ -->
 <div class="ticker-bar">
@@ -704,7 +635,6 @@
             <span class="ticker-item"><span class="dot"></span> Підключіть Telegram-бот для миттєвих сповіщень про зміну статусу</span>
             <span class="ticker-item"><span class="dot"></span> Залиште відгук після завершення вашої заявки — <a href="/reviews">Книга відгуків</a></span>
             <span class="ticker-item"><span class="dot"></span> Гільдія майстрів працює щодня з 09:00 до 18:00</span>
-            <!-- duplicate for seamless loop -->
             <span class="ticker-item"><span class="dot"></span> Подайте нову заявку через портал — <a href="/add_my_problem">Створити клопотання</a></span>
             <span class="ticker-item"><span class="dot"></span> Відслідковуйте статус вашої справи в особистому кабінеті</span>
             <span class="ticker-item"><span class="dot"></span> Після завершення ремонту видається гарантійний талон на 180 днів</span>
@@ -733,8 +663,12 @@
             <a href="/admin_problems" class="admin-link">⚔ У роботі</a>
             <a href="/admin/stats" class="admin-link">📊 Аналітика</a>
             <span class="nav-sep"></span>
-            <a href="/login">🔑 Вхід</a>
-            <a href="/register">📝 Реєстрація</a>
+            {% if current_user %}
+            <span class="user-pill">✅ Увійшли як <strong>{{ current_user.username or ('ID ' ~ current_user.user_id) }}</strong></span>
+            {% else %}
+                <a href="/login">🔑 Вхід</a>
+                <a href="/register">📝 Реєстрація</a>
+            {% endif %}
         </nav>
 
         <button class="burger" id="burgerBtn" aria-label="Відкрити меню">
@@ -745,13 +679,29 @@
     </div>
 </div>
 
-<!-- ═══ FULLSCREEN OVERLAY ═══ -->
+<!-- ═══ OVERLAY ═══ -->
 <div class="overlay" id="menuOverlay">
     <div class="overlay-bg" id="overlayBg"></div>
     <div class="overlay-deco"></div>
-    <button class="overlay-close" id="overlayClose" aria-label="Закрити меню">✕</button>
+    <button class="overlay-close" id="overlayClose">✕</button>
     <div class="overlay-content">
         <div class="overlay-logo">⚜ &nbsp; Цитадель Ордену &nbsp; ⚜</div>
+
+        {% if current_user %}
+        <div class="overlay-user-block">
+            <div class="overlay-user-avatar">
+                {% if current_user.role == 'admin' %}⚔{% else %}👤{% endif %}
+            </div>
+            <div>
+                <div class="overlay-user-name">
+                    {% if current_user.role == 'admin' %}Адміністратор{% else %}Користувач #{{ current_user.user_id }}{% endif %}
+                </div>
+                <div class="overlay-user-role">
+                    {% if current_user.role == 'admin' %}Повний доступ{% else %}Звичайний користувач{% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         <a href="/" class="overlay-item">
             <span class="overlay-item-icon">🏛</span>
@@ -761,12 +711,12 @@
         <a href="/add_my_problem" class="overlay-item">
             <span class="overlay-item-icon">📜</span>
             <span class="overlay-item-text">Нова заявка</span>
-            <span class="overlay-item-desc">Подати клопотання</span>
+            <span class="overlay-item-desc">Клопотання</span>
         </a>
         <a href="/all_my_problems" class="overlay-item">
             <span class="overlay-item-icon">📋</span>
             <span class="overlay-item-text">Мої заявки</span>
-            <span class="overlay-item-desc">Особистий кабінет</span>
+            <span class="overlay-item-desc">Кабінет</span>
         </a>
         <a href="/reviews" class="overlay-item">
             <span class="overlay-item-icon">📖</span>
@@ -785,17 +735,32 @@
         <a href="/admin_problems" class="overlay-item is-admin">
             <span class="overlay-item-icon">⚔</span>
             <span class="overlay-item-text">У роботі</span>
-            <span class="overlay-item-desc">Активні справи</span>
+            <span class="overlay-item-desc">Активні</span>
         </a>
         <a href="/admin/stats" class="overlay-item is-admin">
             <span class="overlay-item-icon">📊</span>
             <span class="overlay-item-text">Аналітика</span>
-            <span class="overlay-item-desc">Звіт магістрів</span>
+            <span class="overlay-item-desc">Звіт</span>
         </a>
 
         <div class="overlay-divider"></div>
         <div class="overlay-section">Акаунт</div>
 
+        {% if current_user %}
+        <div class="overlay-item">
+            <span class="overlay-item-icon">✅</span>
+            <span class="overlay-item-text">{{ current_user.username or ('ID ' ~ current_user.user_id) }}</span>
+            <span class="overlay-item-desc">Ви у системі</span>
+        </div>
+        {% else %}
+        {% if current_user %}
+        <form action="/logout" method="post" class="overlay-logout-form">
+            <button type="submit">
+                <span class="btn-icon">🚪</span>
+                <span class="btn-label">Вийти</span>
+            </button>
+        </form>
+        {% else %}
         <a href="/login" class="overlay-item">
             <span class="overlay-item-icon">🔑</span>
             <span class="overlay-item-text">Вхід</span>
@@ -806,82 +771,89 @@
             <span class="overlay-item-text">Реєстрація</span>
             <span class="overlay-item-desc">Присяга</span>
         </a>
-
-        <form action="/logout" method="post" class="overlay-logout-form">
-            <button type="submit">
-                <span class="btn-icon">🚪</span>
-                <span class="btn-label">Вийти</span>
-            </button>
-        </form>
+        {% endif %}
     </div>
 </div>
 
-<!-- ═══ MAIN ═══ -->
-<main>{% block content %}{% endblock %}</main>
+{% if toast_message %}
+<div class="toast toast-{{ toast_type or 'info' }}" role="alert">{{ toast_message }}</div>
+{% endif %}
 
+
+<main>{% block content %}{% endblock %}</main>
 <footer>⚜ Цитадель Ордену &nbsp;·&nbsp; Всі права захищено</footer>
 
 <script>
-/* ── Burger / overlay ── */
+/* ── Burger ── */
 const burger  = document.getElementById('burgerBtn');
 const overlay = document.getElementById('menuOverlay');
 const bg      = document.getElementById('overlayBg');
-const close   = document.getElementById('overlayClose');
-
-function openMenu()  { overlay.classList.add('open');  burger.classList.add('open');  document.body.style.overflow = 'hidden'; }
-function closeMenu() { overlay.classList.remove('open'); burger.classList.remove('open'); document.body.style.overflow = ''; }
-
+const closeBtn= document.getElementById('overlayClose');
+function openMenu()  { overlay.classList.add('open');  burger.classList.add('open');  document.body.style.overflow='hidden'; }
+function closeMenu() { overlay.classList.remove('open'); burger.classList.remove('open'); document.body.style.overflow=''; }
 burger.addEventListener('click', () => overlay.classList.contains('open') ? closeMenu() : openMenu());
-close.addEventListener('click', closeMenu);
+closeBtn.addEventListener('click', closeMenu);
 bg.addEventListener('click', closeMenu);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeMenu(); });
 
-/* ── Active nav link ── */
+/* ── Active link ── */
 const path = window.location.pathname;
 document.querySelectorAll('.nav-quick a, .overlay-item').forEach(a => {
-    if (a.getAttribute('href') === path) a.classList.add('active-link');
+    if(a.getAttribute('href') === path) a.classList.add('active-link');
 });
 
-/* ── Ripple effect on nav links ── */
-document.querySelectorAll('.nav-quick a').forEach(a => {
-    a.addEventListener('mousemove', e => {
-        const r = a.getBoundingClientRect();
-        a.style.setProperty('--rx', ((e.clientX - r.left) / r.width * 100) + '%');
-        a.style.setProperty('--ry', ((e.clientY - r.top)  / r.height * 100) + '%');
-    });
-});
-document.querySelectorAll('.btn, button[type=submit]').forEach(b => {
-    b.addEventListener('mousemove', e => {
-        const r = b.getBoundingClientRect();
-        b.style.setProperty('--rx', ((e.clientX - r.left) / r.width * 100) + '%');
-        b.style.setProperty('--ry', ((e.clientY - r.top)  / r.height * 100) + '%');
+/* ── Ripple ── */
+document.querySelectorAll('.nav-quick a, .btn, button[type=submit]').forEach(el => {
+    el.addEventListener('mousemove', e => {
+        const r = el.getBoundingClientRect();
+        el.style.setProperty('--rx', ((e.clientX-r.left)/r.width*100)+'%');
+        el.style.setProperty('--ry', ((e.clientY-r.top)/r.height*100)+'%');
     });
 });
 
 /* ── Status badges ── */
-const statusMap = {
-    'В обробці':  'badge-pending',
-    'У роботі':   'badge-working',
-    'Є відповідь':'badge-answered',
-    'Завершено':  'badge-done',
-};
+const statusMap = {'В обробці':'badge-pending','У роботі':'badge-working','Є відповідь':'badge-answered','Завершено':'badge-done'};
 document.querySelectorAll('.status-cell').forEach(el => {
     const t = el.textContent.trim();
-    const cls = statusMap[t] || 'badge-pending';
-    el.innerHTML = `<span class="badge ${cls}">${t}</span>`;
+    el.innerHTML = `<span class="badge ${statusMap[t]||'badge-pending'}">${t}</span>`;
 });
 
-/* ── Ticker mouse-wheel scroll ── */
-const ticker = document.getElementById('tickerInner');
-if (ticker) {
-    ticker.parentElement.addEventListener('wheel', e => {
+/* ── Ticker wheel ── */
+const tickerEl = document.getElementById('tickerInner');
+if(tickerEl) {
+    tickerEl.parentElement.addEventListener('wheel', e => {
         e.preventDefault();
-        const inner = document.getElementById('tickerInner');
-        const speed = parseFloat(getComputedStyle(inner).animationDuration) || 38;
-        const pct   = (e.deltaY > 0 ? 1 : -1) * 3;
-        inner.style.animationDuration = Math.max(8, speed + pct) + 's';
-    }, { passive: false });
+        const spd = parseFloat(getComputedStyle(tickerEl).animationDuration)||38;
+        tickerEl.style.animationDuration = Math.max(8, spd + (e.deltaY>0?3:-3))+'s';
+    }, {passive:false});
 }
+
+/* ══════════════════════════════════════
+   TOAST SYSTEM
+══════════════════════════════════════ */
+function showToast(msg, type='warn', duration=5000) {
+    const icons = { warn:'⚠️', error:'🚫', success:'✅', info:'ℹ️' };
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<span class="toast-icon">${icons[type]||'⚠️'}</span><span class="toast-msg">${msg}</span><span class="toast-close">✕</span>`;
+    container.appendChild(toast);
+
+    const dismiss = () => {
+        toast.classList.add('hiding');
+        toast.addEventListener('animationend', () => toast.remove(), {once:true});
+    };
+    toast.addEventListener('click', dismiss);
+    if(duration > 0) setTimeout(dismiss, duration);
+}
+
+/* Auto-show toast from server if present */
+if(window.__initToast) {
+    showToast(window.__initToast.msg, window.__initToast.type);
+}
+
+/* Expose globally so pages can call it */
+window.showToast = showToast;
 </script>
 </body>
 </html>
