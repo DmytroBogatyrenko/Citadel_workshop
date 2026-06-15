@@ -86,7 +86,7 @@ def get_current_user(access_token: str = Cookie(None)):
             status_code=307,
             headers={"Location": "/login"}
         )
-        
+
 def get_current_user_optional(access_token: str = Cookie(None)):
     """Повертає дані юзера або None — без редіректу, для шаблонів."""
     if not access_token:
@@ -190,7 +190,10 @@ async def login_post(
 
 @app.get("/add_my_problem")
 async def add_problem_get(request: Request, current_user: tuple = Depends(get_current_user)):
-    return templates.TemplateResponse(request=request, name="add_problem.html", context={})
+    return templates.TemplateResponse(
+        request=request, name="add_problem.html", 
+        context={"current_user": {"user_id": current_user[0], "role": current_user[1]}}
+    )
 
 @app.post("/add_my_problem")
 async def add_problem_post(
@@ -208,7 +211,10 @@ async def add_problem_post(
         if ext not in allowed_ext:
             return templates.TemplateResponse(
                 request=request, name="add_problem.html",
-                context={"message": "Недозволений тип файлу. Дозволені: jpg, png, gif, webp, pdf."}
+                context={
+                    "message": "Недозволений тип файлу. Дозволені: jpg, png, gif, webp, pdf.",
+                    "current_user": {"user_id": current_user[0], "role": current_user[1]}
+                }
             )
         safe_name     = secrets.token_hex(8) + ext
         file_location = f"user_problem_image/{safe_name}"
@@ -227,7 +233,10 @@ async def add_problem_post(
 
     return templates.TemplateResponse(
         request=request, name="add_problem.html",
-        context={"message": f'Проблема: "{title}" записана!'}
+        context={
+            "message": f'Проблема: "{title}" записана!',
+            "current_user": {"user_id": current_user[0], "role": current_user[1]}
+        }
     )
 
 @app.get("/new_problems")
@@ -238,13 +247,20 @@ async def new_problems(
 ):
     if current_user[1] != "admin":
         return templates.TemplateResponse(
-            request=request, name="access_denied.html",
-            context={"current_user": {"user_id": current_user[0], "role": current_user[1]}}
+            request=request, name="index.html",
+            context={
+                "current_user": {"user_id": current_user[0], "role": current_user[1]},
+                "toast_message": "Ця зала лише для Магістрів Ордену!",
+                "toast_type": "error"
+            }
         )
     result = await session.execute(select(Problem).filter_by(status="В обробці"))
     return templates.TemplateResponse(
         request=request, name="all_problems.html",
-        context={"problems": result.scalars().all(), "current_user": {"user_id": current_user[0], "role": current_user[1]}}
+        context={
+            "problems": result.scalars().all(), 
+            "current_user": {"user_id": current_user[0], "role": current_user[1]}
+        }
     )
 
 @app.get("/problem")
@@ -279,7 +295,11 @@ async def problem_post(
         await session.refresh(problem)
     return templates.TemplateResponse(
         request=request, name="problem_check.html",
-        context={"problem": problem, "message": "Заявку взято в роботу!"}
+        context={
+            "problem": problem, 
+            "message": "Заявку взято в роботу!",
+            "current_user": {"user_id": current_user[0], "role": current_user[1]}
+        }
     )
 
 @app.get("/admin_problems")
@@ -290,26 +310,21 @@ async def admin_problems(
 ):
     if current_user[1] != "admin":
         return templates.TemplateResponse(
-            request=request, name="access_denied.html",
-            context={"current_user": {"user_id": current_user[0], "role": current_user[1]}}
+            request=request, name="index.html",
+            context={
+                "current_user": {"user_id": current_user[0], "role": current_user[1]},
+                "toast_message": "Ця зала лише для Магістрів Ордену!",
+                "toast_type": "error"
+            }
         )
     result = await session.execute(select(Problem).filter_by(admin_id=current_user[0]))
     return templates.TemplateResponse(
         request=request, name="admin_problems.html",
-        context={"problems": result.scalars().all(), "current_user": {"user_id": current_user[0], "role": current_user[1]}}
+        context={
+            "problems": result.scalars().all(), 
+            "current_user": {"user_id": current_user[0], "role": current_user[1]}
+        }
     )
-    
-@app.get("/admin/stats")
-async def admin_stats(
-    request: Request,
-    session: AsyncSession = Depends(get_session),
-    current_user: tuple = Depends(get_current_user),
-):
-    if current_user[1] != "admin":
-        return templates.TemplateResponse(
-            request=request, name="access_denied.html",
-            context={"current_user": {"user_id": current_user[0], "role": current_user[1]}}
-        )    
 
 @app.get("/add_answer")
 async def add_answer_get(
@@ -344,7 +359,11 @@ async def add_answer_post(
 
     return templates.TemplateResponse(
         request=request, name="add_answer.html",
-        context={"message": "Відповідь збережена!", "id": problem_id}
+        context={
+            "message": "Відповідь збережена!", 
+            "id": problem_id,
+            "current_user": {"user_id": current_user[0], "role": current_user[1]}
+        }
     )
 
 @app.get("/all_my_problems")
@@ -357,8 +376,10 @@ async def my_all_problems(
     result = await session.execute(select(Problem).filter_by(user_id=current_user[0]))
     return templates.TemplateResponse(
         request=request, name="all_my_problems.html",
-        context={"problems": result.scalars().all(), 
-                "current_user": {"user_id": current_user[0], "role": current_user[1]}}
+        context={
+            "problems": result.scalars().all(), 
+            "current_user": {"user_id": current_user[0], "role": current_user[1]}
+        }
     )
 
 @app.get("/check_message")
@@ -375,6 +396,7 @@ async def check_message(
         context={
             "problem": problem.scalars().one_or_none(),
             "answer":  answer.scalars().one_or_none(),
+            "current_user": {"user_id": current_user[0], "role": current_user[1]}
         }
     )
 
@@ -436,6 +458,7 @@ async def service_record_review(
         context={
             "problem":        problem.scalars().one_or_none(),
             "service_record": service_record.scalars().one_or_none(),
+            "current_user": {"user_id": current_user[0], "role": current_user[1]}
         }
     )
 
@@ -443,8 +466,18 @@ async def service_record_review(
 async def admin_stats(
     request: Request,
     session: AsyncSession = Depends(get_session),
-    _:       bool = Depends(admin_required),
+    current_user: tuple = Depends(get_current_user),
 ):
+    if current_user[1] != "admin":
+        return templates.TemplateResponse(
+            request=request, name="index.html",
+            context={
+                "current_user": {"user_id": current_user[0], "role": current_user[1]},
+                "toast_message": "Ця зала лише для Магістрів Ордену!",
+                "toast_type": "error"
+            }
+        )
+
     all_q    = await session.execute(select(Problem))
     all_prob = all_q.scalars().all()
 
@@ -469,7 +502,12 @@ async def admin_stats(
 
     return templates.TemplateResponse(
         request=request, name="admin_stats.html",
-        context={"stats": stats, "active_count": active_count, "avg_time": avg_time_str}
+        context={
+            "stats": stats, 
+            "active_count": active_count, 
+            "avg_time": avg_time_str,
+            "current_user": {"user_id": current_user[0], "role": current_user[1]}
+        }
     )
 
 @app.get("/reviews")
@@ -481,12 +519,16 @@ async def reviews_get(
     reviews_q = await session.execute(select(Review).order_by(Review.date_created.desc()))
     reviews   = reviews_q.scalars().all()
 
-    done_q          = await session.execute(select(Problem).filter_by(user_id=current_user[0], status="Завершено"))
+    done_q           = await session.execute(select(Problem).filter_by(user_id=current_user[0], status="Завершено"))
     can_leave_review = len(done_q.scalars().all()) > 0
 
     return templates.TemplateResponse(
         request=request, name="reviews.html",
-        context={"reviews": reviews, "can_leave_review": can_leave_review}
+        context={
+            "reviews": reviews, 
+            "can_leave_review": can_leave_review,
+            "current_user": {"user_id": current_user[0], "role": current_user[1]}
+        }
     )
 
 @app.post("/reviews")
