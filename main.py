@@ -26,6 +26,11 @@ from tg_bot import start, send_msg, notify_admins_new_problem
 from pydantic import BaseModel
 from ai_assistant import TicketAssistantManager
 
+from fastapi.middleware.cors import CORSMiddleware
+
+from project_models import Review
+
+
 def generate_code():
     alphabet = string.ascii_uppercase + string.digits
     return ''.join(secrets.choice(alphabet) for _ in range(6))
@@ -34,6 +39,21 @@ SECRET_KEY = 'kW!8729ew95P$be5j532#8Qlv;3&5tJ3'
 ALGORITHM  = "HS256"
 
 app = FastAPI()
+
+# Додаємо твою нову адресу CloudFront у список дозволених
+origins = [
+    "https://d1arm86htgwr15.cloudfront.net",
+    "https://citadelworkshop.duckdns.org",
+    "http://127.0.0.1:8000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -53,6 +73,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "connect-src 'self';"
         )
         return response
+    
+class LoginRequest(BaseModel):
+    username: str
+    password: str  
+    
+class RegisterRequest(BaseModel):
+    username: str
+    email: str
+    password: str      
 
 app.add_middleware(SecurityHeadersMiddleware)
 
@@ -88,6 +117,20 @@ def get_current_user(access_token: str = Cookie(None)):
             status_code=307,
             headers={"Location": "/login"}
         )
+
+def get_current_user_api(access_token: str = Cookie(None)):
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Неавторизовано")
+    try:
+        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("user_id")
+        role = payload.get("role")
+        username = payload.get("username")
+        if user_id is None or role is None:
+            raise HTTPException(status_code=401, detail="Неавторизовано")
+        return (user_id, role, username)
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Недійсний токен")
 
 def build_user_context(current_user: tuple) -> dict:
     return {"user_id": current_user[0], "role": current_user[1], "username": current_user[2] if len(current_user) > 2 else None}
@@ -166,6 +209,35 @@ async def register_post(
         }
     )
 
+@app.post("/api/register")
+async def api_register(
+    data: RegisterRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    if len(data.password) < 6:
+        raise HTTPException(status_code=400, detail="Пароль має містити щонайменше 6 символів")
+
+    existing = await session.execute(select(User).filter(User.username == data.username))
+    if existing.scalars().first():
+        raise HTTPException(status_code=400, detail="Користувач з таким іменем вже існує")
+
+    new_user = User(username=data.username, email=data.email, is_admin=False)
+    new_user.set_password(raw_password=data.password)
+    session.add(new_user)
+    await session.commit()
+    await session.refresh(new_user)
+
+    tg_code = generate_code()
+    user_in_tg = Users_in_telegram(tg_code=tg_code, user_in_site=new_user.id)
+    session.add(user_in_tg)
+    await session.commit()
+
+    return {
+        "success": True,
+        "username": new_user.username,
+        "tg_code": tg_code,
+    }
+
 @app.get("/login")
 async def login_get(request: Request, error: str = Query(default="")):
     return templates.TemplateResponse(
@@ -207,6 +279,35 @@ async def login_post(
         httponly=True, max_age=60*60*24*3, samesite="lax",
     )
     return resp
+
+@app.post("/api/login")
+async def api_login(
+    data: LoginRequest,
+    response: Response,
+    session: AsyncSession = Depends(get_session),
+):
+    if len(data.password) < 6:
+        raise HTTPException(status_code=400, detail="Пароль має містити щонайменше 6 символів")
+
+    result = await session.execute(select(User).filter(User.username == data.username))
+    user = result.scalars().first()
+
+    if not user or not user.verify_password(data.password):
+        raise HTTPException(status_code=401, detail="Пароль або логін невірний")
+
+    token_data = {
+        "user_id": user.id,
+        "role": "admin" if user.is_admin else "user",
+        "username": user.username,
+        "exp": datetime.utcnow() + timedelta(hours=72),
+    }
+    token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
+
+    response.set_cookie(
+        key="access_token", value=token,
+        httponly=True, max_age=60*60*24*3, samesite="lax",
+    )
+    return {"success": True, "username": user.username, "role": "admin" if user.is_admin else "user"}
 
 @app.get("/add_my_problem")
 async def add_problem_get(request: Request, current_user: tuple = Depends(get_current_user)):
@@ -259,6 +360,37 @@ async def add_problem_post(
         }
     )
 
+@app.post("/api/add_problem")
+async def api_add_problem(
+    title: str = Form(),
+    description: str = Form(),
+    img = File(None),
+    current_user: tuple = Depends(get_current_user_api),
+    session: AsyncSession = Depends(get_session),
+):
+    img_path = None
+    if img and img.filename:
+        allowed_ext = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf"}
+        ext = os.path.splitext(img.filename)[1].lower()
+        if ext not in allowed_ext:
+            raise HTTPException(status_code=400, detail="Недозволений тип файлу")
+        safe_name = secrets.token_hex(8) + ext
+        file_location = f"user_problem_image/{safe_name}"
+        with open("static/" + file_location, "wb+") as f:
+            f.write(await img.read())
+        img_path = file_location
+
+    new_problem = Problem(
+        title=title, description=description,
+        user_id=current_user[0], image_url=img_path,
+    )
+    session.add(new_problem)
+    await session.commit()
+    await session.refresh(new_problem)
+    await notify_admins_new_problem(new_problem.id, new_problem.title)
+
+    return {"success": True, "id": new_problem.id, "title": new_problem.title}
+
 @app.get("/new_problems")
 async def new_problems(
     request: Request,
@@ -282,6 +414,86 @@ async def new_problems(
             "current_user": build_user_context(current_user)
         }
     )
+
+@app.get("/api/new_problems")
+async def api_new_problems(
+    current_user: tuple = Depends(get_current_user_api),
+    session: AsyncSession = Depends(get_session),
+):
+    if current_user[1] != "admin":
+        raise HTTPException(status_code=403, detail="Доступ лише для адміністраторів")
+
+    result = await session.execute(select(Problem).filter_by(status="В обробці"))
+    problems = result.scalars().all()
+
+    return [
+        {"id": p.id, "title": p.title, "description": p.description}
+        for p in problems
+    ]
+
+
+@app.post("/api/take_problem")
+async def api_take_problem(
+    id: int = Form(),
+    current_user: tuple = Depends(get_current_user_api),
+    session: AsyncSession = Depends(get_session),
+):
+    if current_user[1] != "admin":
+        raise HTTPException(status_code=403, detail="Доступ лише для адміністраторів")
+
+    result = await session.execute(select(Problem).filter_by(id=id))
+    problem = result.scalar_one_or_none()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Заявку не знайдено")
+
+    problem.status = "У роботі"
+    problem.admin_id = current_user[0]
+    await send_msg(problem.user_id, f"Запит #{problem.id} ({problem.title})\nСтатус → 'У роботі'")
+    session.add(problem)
+    await session.commit()
+
+    return {"success": True}
+
+
+@app.get("/api/admin_problems")
+async def api_admin_problems(
+    current_user: tuple = Depends(get_current_user_api),
+    session: AsyncSession = Depends(get_session),
+):
+    if current_user[1] != "admin":
+        raise HTTPException(status_code=403, detail="Доступ лише для адміністраторів")
+
+    result = await session.execute(select(Problem).filter_by(admin_id=current_user[0]))
+    problems = result.scalars().all()
+
+    return [
+        {"id": p.id, "title": p.title, "status": p.status}
+        for p in problems
+    ]
+
+
+@app.post("/api/add_answer")
+async def api_add_answer(
+    problem_id: int = Form(),
+    message: str = Form(),
+    current_user: tuple = Depends(get_current_user_api),
+    session: AsyncSession = Depends(get_session),
+):
+    if current_user[1] != "admin":
+        raise HTTPException(status_code=403, detail="Доступ лише для адміністраторів")
+
+    new_answer = AdminResponse(message=message, admin_id=current_user[0], problem_id=problem_id)
+    session.add(new_answer)
+    await session.commit()
+
+    result = await session.execute(select(Problem).filter_by(id=problem_id))
+    problem = result.scalars().one_or_none()
+    problem.status = "Є відповідь"
+    await send_msg(problem.user_id, f"Запит #{problem.id} ({problem.title})\nСтатус → 'Є відповідь'")
+    session.add(problem)
+    await session.commit()
+
+    return {"success": True}
 
 @app.get("/problem")
 async def problem_get(
@@ -387,6 +599,25 @@ async def add_answer_post(
     )
 
 @app.get("/all_my_problems")
+@app.get("/api/my_problems")
+async def api_my_problems(
+    current_user: tuple = Depends(get_current_user_api),
+    session: AsyncSession = Depends(get_session),
+):
+    result = await session.execute(select(Problem).filter_by(user_id=current_user[0]))
+    problems = result.scalars().all()
+
+    return [
+        {
+            "id": p.id,
+            "title": p.title,
+            "description": p.description,
+            "status": p.status,
+            "date_created": p.date_created.isoformat() if p.date_created else None,
+        }
+        for p in problems
+    ]
+    
 @app.get("/my_all_problems")   
 async def my_all_problems(
     request:      Request,
@@ -419,6 +650,31 @@ async def check_message(
             "current_user": build_user_context(current_user)
         }
     )
+    
+@app.get("/api/check_message")
+async def api_check_message(
+    id: int,
+    current_user: tuple = Depends(get_current_user_api),
+    session: AsyncSession = Depends(get_session),
+):
+    problem_q = await session.execute(select(Problem).filter_by(id=id))
+    problem = problem_q.scalars().one_or_none()
+
+    if not problem:
+        raise HTTPException(status_code=404, detail="Заявку не знайдено")
+
+    answer_q = await session.execute(select(AdminResponse).filter_by(problem_id=id))
+    answer = answer_q.scalars().one_or_none()
+
+    return {
+        "problem": {
+            "id": problem.id,
+            "title": problem.title,
+            "description": problem.description,
+            "status": problem.status,
+        },
+        "answer": {"message": answer.message} if answer else None,
+    }    
 
 @app.get("/service_complete")
 async def service_complete_get(
@@ -463,6 +719,71 @@ async def service_complete_post(
         request=request, name="service_complete.html",
         context={"message": "Запис додано!", "problem_id": problem_id}
     )
+    
+@app.post("/api/service_complete")
+async def api_service_complete(
+    work_done: str = Form(),
+    parts_used: str = Form(),
+    problem_id: int = Form(),
+    current_user: tuple = Depends(get_current_user_api),
+    session: AsyncSession = Depends(get_session),
+):
+    if current_user[1] != "admin":
+        raise HTTPException(status_code=403, detail="Доступ лише для адміністраторів")
+
+    result = await session.execute(select(Problem).filter_by(id=problem_id))
+    problem = result.scalars().one_or_none()
+
+    if not problem:
+        raise HTTPException(status_code=404, detail="Заявку не знайдено")
+
+    warranty_info = (
+        f"# {problem_id}\n"
+        f"Тип послуги: сервісне обслуговування\n"
+        f"Дата початку робіт: {problem.date_created.date()}\n"
+        f"Дата завершення робіт: {date.today()}\n"
+        f"Гарантія: 180 днів"
+    )
+    session.add(ServiceRecord(
+        work_done=work_done, parts_used=parts_used,
+        problem_id=problem_id, warranty_info=warranty_info,
+    ))
+    problem.status = "Завершено"
+    await send_msg(problem.user_id, f"Запит #{problem.id} ({problem.title})\nСтатус → 'Завершено'")
+    session.add(problem)
+    await session.commit()
+
+    return {"success": True}
+
+
+@app.get("/api/service_record_review")
+async def api_service_record_review(
+    id: int,
+    current_user: tuple = Depends(get_current_user_api),
+    session: AsyncSession = Depends(get_session),
+):
+    problem_q = await session.execute(select(Problem).filter_by(id=id))
+    problem = problem_q.scalars().one_or_none()
+
+    if not problem:
+        raise HTTPException(status_code=404, detail="Заявку не знайдено")
+
+    record_q = await session.execute(
+        select(ServiceRecord).filter_by(problem_id=id).order_by(ServiceRecord.id.desc())
+    )
+    record = record_q.scalars().first()
+
+    if not record:
+        raise HTTPException(status_code=404, detail="Гарантійний талон не знайдено")
+
+    return {
+        "problem": {"id": problem.id, "title": problem.title, "status": problem.status},
+        "service_record": {
+            "work_done": record.work_done,
+            "parts_used": record.parts_used,
+            "warranty_info": record.warranty_info,
+        },
+    }    
 
 @app.get("/service_record_review")
 async def service_record_review(
@@ -529,6 +850,42 @@ async def admin_stats(
             "current_user": build_user_context(current_user)
         }
     )
+    
+@app.get("/api/admin_stats")
+async def api_admin_stats(
+    current_user: tuple = Depends(get_current_user_api),
+    session: AsyncSession = Depends(get_session),
+):
+    if current_user[1] != "admin":
+        raise HTTPException(status_code=403, detail="Доступ лише для адміністраторів")
+
+    all_q = await session.execute(select(Problem))
+    all_prob = all_q.scalars().all()
+
+    stats = {"В обробці": 0, "У роботі": 0, "Є відповідь": 0, "Завершено": 0}
+    for p in all_prob:
+        if p.status in stats:
+            stats[p.status] += 1
+    active_count = stats["В обробці"] + stats["У роботі"] + stats["Є відповідь"]
+
+    done_q = await session.execute(
+        select(Problem.date_created, ServiceRecord.date_completed)
+        .join(ServiceRecord, Problem.id == ServiceRecord.problem_id)
+        .filter(Problem.status == "Завершено")
+    )
+    done_records = done_q.all()
+    total_seconds = sum((dc - cr).total_seconds() for cr, dc in done_records)
+    count = len(done_records)
+
+    avg_time_str = "Немає завершених запитів"
+    if count > 0:
+        avg_time_str = f"{total_seconds / count / 3600:.1f} годин"
+
+    return {
+        "stats": stats,
+        "active_count": active_count,
+        "avg_time": avg_time_str,
+    }    
 
 @app.get("/reviews")
 async def reviews_get(
@@ -566,11 +923,52 @@ async def reviews_post(
     await session.commit()
     return RedirectResponse(url="/reviews", status_code=303)
 
+
+@app.get("/api/reviews")
+async def api_reviews(
+    current_user: tuple = Depends(get_current_user_api),
+    session: AsyncSession = Depends(get_session),
+):
+    reviews_q = await session.execute(select(Review).order_by(Review.date_created.desc()))
+    reviews = reviews_q.scalars().all()
+
+    done_q = await session.execute(select(Problem).filter_by(user_id=current_user[0], status="Завершено"))
+    can_leave_review = len(done_q.scalars().all()) > 0
+
+    return {
+        "reviews": [
+            {
+                "id": r.id,
+                "text": r.text,
+                "user_id": r.user_id,
+                "date_created": r.date_created.strftime('%d.%m.%Y'),
+            }
+            for r in reviews
+        ],
+        "can_leave_review": can_leave_review,
+    }
+
+
+@app.post("/api/reviews")
+async def api_add_review(
+    text: str = Form(),
+    current_user: tuple = Depends(get_current_user_api),
+    session: AsyncSession = Depends(get_session),
+):
+    done_q = await session.execute(select(Problem).filter_by(user_id=current_user[0], status="Завершено"))
+    if not done_q.scalars().all():
+        raise HTTPException(status_code=403, detail="Тільки користувачі із завершеними запитами можуть залишати відгуки.")
+
+    session.add(Review(text=text, user_id=current_user[0]))
+    await session.commit()
+
+    return {"success": True}
+
 class AIDataRequest(BaseModel):
     description: str
 
 @app.post("/api/analyze_ticket")
-async def api_analyze_ticket(data: AIDataRequest, current_user: tuple = Depends(get_current_user)):
+async def api_analyze_ticket(data: AIDataRequest, current_user: tuple = Depends(get_current_user_api)):
     if not data.description or len(data.description) < 5:
         raise HTTPException(status_code=400, detail="Опис занадто короткий")
     
@@ -584,9 +982,30 @@ def logout():
     resp.delete_cookie("access_token")
     return resp
 
+@app.post("/api/logout")
+async def api_logout(response: Response):
+    response.delete_cookie("access_token")
+    return {"success": True}
+
+@app.get("/api/me")
+async def api_me(current_user: tuple = Depends(get_current_user_api)):
+    return {
+        "user_id": current_user[0],
+        "role": current_user[1],
+        "username": current_user[2],
+    }
+from fastapi.responses import FileResponse
+
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        
+app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="react-assets")
+
+
+@app.get("/{full_path:path}")
+async def serve_react(full_path: str):
+    return FileResponse("frontend/dist/index.html")        
 
 @app.on_event("startup")
 async def on_startup():

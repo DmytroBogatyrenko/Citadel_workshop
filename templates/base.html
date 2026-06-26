@@ -743,17 +743,12 @@
             <span class="overlay-item-desc">Звіт</span>
         </a>
 
-        <div class="overlay-divider"></div>
-        <div class="overlay-section">Акаунт</div>
-
         {% if current_user %}
         <div class="overlay-item">
             <span class="overlay-item-icon">✅</span>
             <span class="overlay-item-text">{{ current_user.username or ('ID ' ~ current_user.user_id) }}</span>
             <span class="overlay-item-desc">Ви у системі</span>
         </div>
-        {% else %}
-        {% if current_user %}
         <form action="/logout" method="post" class="overlay-logout-form">
             <button type="submit">
                 <span class="btn-icon">🚪</span>
