@@ -49,10 +49,10 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["*"],  # або твої конкретні домени
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"],  # Цей рядок обов'язково має дозволяти "*" або містити "Authorization"
 )
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):

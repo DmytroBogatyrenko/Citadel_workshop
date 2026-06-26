@@ -27,6 +27,11 @@ function Login({ setCurrentUser }) {
         return
       }
 
+      // Зберігаємо отриманий токен у локальне сховище браузера
+      if (data.token) {
+        localStorage.setItem('token', data.token)
+      }
+
       setCurrentUser({ username: data.username, role: data.role })
       navigate('/')
     } catch {

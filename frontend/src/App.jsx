@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import './App.css'
 import Navbar from './components/Navbar.jsx'
@@ -15,33 +15,46 @@ import ServiceCheck from './pages/ServiceCheck.jsx'
 import Reviews from './pages/Reviews.jsx'
 import Toast from './components/Toast.jsx'
 
+
 function App() {
   const [currentUser, setCurrentUser] = useState(null)
-  const [checkingAuth, setCheckingAuth] = useState(true)
   const [toast, setToast] = useState(null) // { message, type }
+  const [checkingAuth, setCheckingAuth] = useState(true)
 
   useEffect(() => {
-    const checkLogin = async () => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        setCurrentUser(null)
+        setCheckingAuth(false)
+        return
+      }
+
       try {
         const response = await fetch('https://citadelworkshop.duckdns.org/api/me', {
-          credentials: 'include',
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
         })
+        
         if (response.ok) {
           const data = await response.json()
           setCurrentUser({ username: data.username, role: data.role })
+        } else {
+          // Якщо токен застарів або недійсний
+          localStorage.removeItem('token')
+          setCurrentUser(null)
         }
-        if (!toast) return
-          const timer = setTimeout(() => setToast(null), 5000)
-          return () => clearTimeout(timer)
       } catch {
-        // не залогінений — це нормально
+        setCurrentUser(null)
       } finally {
         setCheckingAuth(false)
       }
     }
 
-    checkLogin()
-  }, [toast])
+    checkAuth()
+  }, [])
 
   if (checkingAuth) {
     return <p style={{ textAlign: 'center', marginTop: '50px', fontFamily: 'sans-serif' }}>Завантаження...</p>
