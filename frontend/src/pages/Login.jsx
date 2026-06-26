@@ -17,7 +17,6 @@ function Login({ setCurrentUser }) {
       const response = await fetch('https://citadelworkshop.duckdns.org/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ username, password }),
       })
       const data = await response.json()
@@ -27,7 +26,6 @@ function Login({ setCurrentUser }) {
         return
       }
 
-      // Зберігаємо отриманий токен у локальне сховище браузера
       if (data.token) {
         localStorage.setItem('token', data.token)
       }
@@ -47,7 +45,6 @@ function Login({ setCurrentUser }) {
       const response = await fetch('https://citadelworkshop.duckdns.org/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ username, email, password }),
       })
       const data = await response.json()
@@ -66,9 +63,9 @@ function Login({ setCurrentUser }) {
     }
   }
 
-    return (
+  return (
     <div className="card login-card">
-        <h2>{mode === 'login' ? '🔑 Вхід у Покої' : '📝 Присяга на Вірність'}</h2>
+        <h2>{mode === 'login' ? 'Вхід у Покої' : 'Присяга на Вірність'}</h2>
 
         <div className="mode-switch">
         <button
@@ -136,7 +133,7 @@ function Login({ setCurrentUser }) {
         )}
         </p>
     </div>
-    )
+  )
 }
 
 export default Login

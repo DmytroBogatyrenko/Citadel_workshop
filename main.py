@@ -45,11 +45,14 @@ origins = [
     "https://d1arm86htgwr15.cloudfront.net",
     "https://citadelworkshop.duckdns.org",
     "http://127.0.0.1:8000",
+    "http://localhost:3000",
+    "http://localhost:5173",
 ]
+
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # або твої конкретні домени
+    allow_origins=origins,  # або твої конкретні домени
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],  # Цей рядок обов'язково має дозволяти "*" або містити "Authorization"
