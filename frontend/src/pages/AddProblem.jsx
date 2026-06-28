@@ -31,7 +31,7 @@ function AddProblem({ currentUser }) {
     setAiData(null)
 
     try {
-      const response = await fetch('https://citadelworkshop.duckdns.org/api/analyze_ticket', {
+      const response = await fetch('/api/analyze_ticket', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -76,7 +76,7 @@ function AddProblem({ currentUser }) {
     }
 
     try {
-      const response = await fetch('https://citadelworkshop.duckdns.org/api/add_problem', {
+      const response = await fetch('/api/add_problem', {
         method: 'POST',
         credentials: 'include',
         body: formData,

@@ -15,7 +15,7 @@ function CheckMessage({ currentUser }) {
 
     const fetchData = async () => {
       try {
-        const response = await fetch(`https://citadelworkshop.duckdns.org/api/check_message?id=${id}`, {
+        const response = await fetch(`/api/check_message?id=${id}`, {
           credentials: 'include',
         })
         if (!response.ok) {

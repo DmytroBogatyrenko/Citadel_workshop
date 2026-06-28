@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}У роботі — Цитадель{% endblock %}
+{% block content %}
+<style>
+.empty-state { text-align:center; padding:2.5rem; color:var(--muted); }
+.empty-state .icon { font-size:2rem; margin-bottom:0.75rem; opacity:0.4; }
+.empty-state p { color:var(--muted); }
+.problem-id { color:var(--muted); font-size:0.8rem; }
+.problem-title { font-weight:500; }
+.problem-actions { display:flex; gap:8px; flex-wrap:wrap; padding:10px 16px; }
+</style>
+<div class="card card-wide">
+    <h2>⚔ Справи під Вашим Контролем</h2>
+    {% if not problems %}
+    <div class="empty-state">
+        <div class="icon">📭</div>
+        <p>Немає активних справ</p>
+    </div>
+    {% else %}
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>#ID</th><th>Назва</th><th>Дії</th></tr></thead>
+            <tbody>
+                {% for p in problems %}
+                <tr>
+                    <td class="problem-id">#{{ p.id }}</td>
+                    <td class="problem-title">{{ p.title }}</td>
+                    <td class="problem-actions">
+                        <a href="/add_answer?problem_id={{ p.id }}" class="btn btn-sm btn-ghost">💬 Відповідь</a>
+                        <a href="/service_complete?problem_id={{ p.id }}" class="btn btn-sm btn-success">📄 Талон</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

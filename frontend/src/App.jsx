@@ -31,7 +31,7 @@ function App() {
       }
 
       try {
-        const response = await fetch('https://citadelworkshop.duckdns.org/api/me', {
+        const response = await fetch('/api/me', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`

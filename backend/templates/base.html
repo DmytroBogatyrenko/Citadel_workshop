@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Цитадель Ордену{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Raleway:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --forest:  #051409;
+            --deep:    #081f0e;
+            --panel:   #112918;
+            --gold:    #c9a84c;
+            --gold-lt: #e2c472;
+            --gold-dk: #9b7a30;
+            --parch:   #f5f0e8;
+            --ink:     #1c1208;
+            --muted:   #a09070;
+            --danger:  #8b2020;
+            --success: #2a6b35;
+        }
+
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Raleway', sans-serif;
+            background: var(--forest);
+            color: var(--parch);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* ══════════════════════════════════════
+           TOAST NOTIFICATIONS
+        ══════════════════════════════════════ */
+        #toast-container {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            pointer-events: none;
+            width: 100%;
+            max-width: 480px;
+            padding: 0 16px;
+        }
+        .toast {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            pointer-events: all;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            animation: toastIn 0.35s cubic-bezier(.21,1.02,.73,1) both;
+            backdrop-filter: blur(8px);
+            cursor: pointer;
+        }
+        .toast.hiding {
+            animation: toastOut 0.3s ease forwards;
+        }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateY(-16px) scale(0.95); }
+            to   { opacity: 1; transform: translateY(0)     scale(1); }
+        }
+        @keyframes toastOut {
+            from { opacity: 1; transform: translateY(0)     scale(1); }
+            to   { opacity: 0; transform: translateY(-10px) scale(0.95); }
+        }
+        .toast-error {
+            background: rgba(80, 10, 10, 0.92);
+            border: 1px solid rgba(220,60,60,0.45);
+            color: #ffcdd2;
+        }
+        .toast-success {
+            background: rgba(10, 50, 18, 0.92);
+            border: 1px solid rgba(76,175,80,0.4);
+            color: #c8e6c9;
+        }
+        .toast-info {
+            background: rgba(10, 30, 60, 0.92);
+            border: 1px solid rgba(33,150,243,0.4);
+            color: #bbdefb;
+        }
+        .toast-warn {
+            background: rgba(60, 35, 5, 0.95);
+            border: 1px solid rgba(201,168,76,0.45);
+            color: var(--gold-lt);
+        }
+        .toast-icon { font-size: 1.1rem; flex-shrink: 0; }
+        .toast-msg  { flex: 1; line-height: 1.4; }
+        .toast-close {
+            flex-shrink: 0;
+            opacity: 0.5;
+            font-size: 0.85rem;
+            transition: opacity 0.2s;
+        }
+        .toast:hover .toast-close { opacity: 1; }
+
+        /* ══════════════════════════════════════
+           NEWS TICKER
+        ══════════════════════════════════════ */
+        .ticker-bar {
+            background: rgba(0,0,0,0.55);
+            border-bottom: 1px solid rgba(201,168,76,0.2);
+            height: 32px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+        .ticker-label {
+            flex-shrink: 0;
+            background: var(--gold-dk);
+            color: var(--ink);
+            font-family: 'Cinzel', serif;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            padding: 0 14px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            z-index: 2;
+        }
+        .ticker-track {
+            flex: 1;
+            overflow: hidden;
+            mask-image: linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%);
+            -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%);
+        }
+        .ticker-inner {
+            display: flex;
+            animation: ticker 38s linear infinite;
+            white-space: nowrap;
+        }
+        .ticker-inner:hover { animation-play-state: paused; }
+        @keyframes ticker {
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .ticker-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 32px;
+            font-size: 0.72rem;
+            color: rgba(245,240,232,0.6);
+            letter-spacing: 0.06em;
+        }
+        .ticker-item .dot {
+            width: 4px; height: 4px;
+            border-radius: 50%;
+            background: var(--gold-dk);
+            flex-shrink: 0;
+        }
+        .ticker-item a { color: var(--gold); text-decoration: none; transition: color 0.2s; }
+        .ticker-item a:hover { color: var(--gold-lt); }
+
+        /* ══════════════════════════════════════
+           TOPBAR
+        ══════════════════════════════════════ */
+        .topbar {
+            background: linear-gradient(180deg, #020a04 0%, var(--deep) 100%);
+            border-bottom: 1px solid var(--gold-dk);
+            position: sticky;
+            top: 0;
+            z-index: 90;
+            box-shadow: 0 2px 24px rgba(0,0,0,0.6);
+        }
+        .topbar-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            height: 54px;
+            gap: 12px;
+        }
+        .logo {
+            display: flex;
+            flex-direction: column;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .logo-main {
+            font-family: 'Cinzel', serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--gold);
+            letter-spacing: 0.1em;
+            line-height: 1;
+        }
+        .logo-sub {
+            font-size: 0.55rem;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--gold-dk);
+            margin-top: 2px;
+        }
+
+        /* Nav quick links */
+        .nav-quick {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            flex: 1;
+            overflow-x: auto;
+            padding: 0 12px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .nav-quick::-webkit-scrollbar { display: none; }
+        .nav-quick a {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: rgba(245,240,232,0.6);
+            text-decoration: none;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            position: relative;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .nav-quick a::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            background: radial-gradient(circle at var(--rx,50%) var(--ry,50%), rgba(201,168,76,0.35) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.4s;
+            pointer-events: none;
+        }
+        .nav-quick a:hover { color: var(--gold-lt); background: rgba(201,168,76,0.1); border-color: rgba(201,168,76,0.3); transform: translateY(-1px); }
+        .nav-quick a:hover::after { opacity: 1; }
+        .nav-quick a:active { transform: scale(0.95) translateY(0); }
+        .nav-quick a.active-link { color: var(--gold); background: rgba(201,168,76,0.12); border-color: rgba(201,168,76,0.4); }
+        .nav-quick a.admin-link { color: rgba(160,210,170,0.65); }
+        .nav-quick a.admin-link:hover { color: #a5d6a7; background: rgba(42,107,53,0.2); border-color: rgba(42,107,53,0.4); }
+
+        .user-pill {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border: 1px solid rgba(42,107,53,0.45);
+            border-radius: 20px;
+            background: rgba(42,107,53,0.18);
+            color: #a5d6a7;
+            font-size: 0.78rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .user-pill strong { color: var(--gold-lt); }
+
+        .nav-sep { width: 1px; height: 16px; background: rgba(201,168,76,0.2); flex-shrink: 0; margin: 0 6px; }
+
+        /* User badge in nav */
+        .nav-user-badge {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gold);
+            border: 1px solid rgba(201,168,76,0.35);
+            background: rgba(201,168,76,0.07);
+            white-space: nowrap;
+        }
+        .nav-user-badge .role-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--gold);
+            flex-shrink: 0;
+        }
+        .nav-user-badge .role-dot.is-admin { background: #a5d6a7; }
+
+        /* Nav logout button */
+        .nav-logout-form { display: inline-flex; margin: 0; }
+        .btn-nav-logout {
+            all: unset;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: rgba(220,150,150,0.65);
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-nav-logout:hover { color: #ef9a9a; background: rgba(139,32,32,0.2); border-color: rgba(220,80,80,0.3); }
+
+        /* Burger */
+        .burger {
+            flex-shrink: 0;
+            width: 40px; height: 40px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 5px;
+            cursor: pointer;
+            background: transparent;
+            border: 1px solid rgba(201,168,76,0.25);
+            border-radius: 8px;
+            transition: all 0.25s;
+            padding: 0;
+            position: relative;
+            overflow: hidden;
+        }
+        .burger::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(201,168,76,0.3) 0%, transparent 70%);
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .burger:hover { border-color: var(--gold); }
+        .burger:hover::before { opacity: 1; }
+        .burger-line { width: 18px; height: 1.5px; background: var(--gold); border-radius: 2px; transition: all 0.3s cubic-bezier(.4,0,.2,1); transform-origin: center; }
+        .burger.open .burger-line:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+        .burger.open .burger-line:nth-child(2) { opacity: 0; transform: scaleX(0); }
+        .burger.open .burger-line:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+        /* ══════════════════════════════════════
+           FULLSCREEN OVERLAY
+        ══════════════════════════════════════ */
+        .overlay {
+            position: fixed; inset: 0;
+            z-index: 200;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.35s ease;
+        }
+        .overlay.open { opacity: 1; pointer-events: all; }
+        .overlay-bg {
+            position: absolute; inset: 0;
+            background: rgba(2,8,3,0.96);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .overlay-deco { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+        .overlay-deco::before {
+            content: ''; position: absolute; top: 0; left: 0;
+            width: 240px; height: 240px;
+            border-top: 1px solid rgba(201,168,76,0.15);
+            border-left: 1px solid rgba(201,168,76,0.15);
+        }
+        .overlay-deco::after {
+            content: ''; position: absolute; bottom: 0; right: 0;
+            width: 240px; height: 240px;
+            border-bottom: 1px solid rgba(201,168,76,0.15);
+            border-right: 1px solid rgba(201,168,76,0.15);
+        }
+        .overlay-close {
+            position: absolute; top: 20px; right: 20px;
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; color: var(--muted);
+            cursor: pointer;
+            border: 1px solid rgba(201,168,76,0.2);
+            border-radius: 50%;
+            background: transparent;
+            transition: all 0.2s;
+            z-index: 1;
+        }
+        .overlay-close:hover { color: var(--gold-lt); border-color: var(--gold); transform: rotate(90deg); }
+
+        .overlay-content {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 60px 24px;
+            overflow-y: auto;
+        }
+
+        /* Logged-in user block inside overlay */
+        .overlay-user-block {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 24px;
+            background: rgba(201,168,76,0.06);
+            border: 1px solid rgba(201,168,76,0.18);
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            width: 100%;
+            max-width: 420px;
+        }
+        .overlay-user-avatar {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: rgba(201,168,76,0.15);
+            border: 1px solid rgba(201,168,76,0.3);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        .overlay-user-name { font-family: 'Cinzel', serif; font-size: 0.9rem; color: var(--gold-lt); }
+        .overlay-user-role { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.08em; }
+
+        .overlay-logo { font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.3em; color: var(--gold-dk); text-transform: uppercase; margin-bottom: 2rem; }
+        .overlay-section { font-size: 0.6rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--gold-dk); margin: 1.25rem 0 0.4rem; text-align: center; }
+
+        .overlay-item {
+            display: flex; align-items: center; justify-content: center;
+            gap: 14px; padding: 10px 40px;
+            text-decoration: none;
+            position: relative; cursor: pointer;
+            transition: all 0.25s;
+            border-radius: 4px; overflow: hidden;
+            width: 100%; max-width: 420px;
+        }
+        .overlay-item::before {
+            content: ''; position: absolute; left: 0; right: 0; top: 50%; bottom: 50%;
+            background: rgba(201,168,76,0.07);
+            transition: top 0.25s, bottom 0.25s;
+            border-radius: 4px;
+        }
+        .overlay-item:hover::before { top: 0; bottom: 0; }
+        .overlay-item::after {
+            content: ''; position: absolute; left: 0; top: 50%; bottom: 50%;
+            width: 2px; background: var(--gold);
+            transition: top 0.25s, bottom 0.25s;
+            border-radius: 2px;
+        }
+        .overlay-item:hover::after { top: 10%; bottom: 10%; }
+        .overlay-item-icon { font-size: 1.1rem; width: 28px; text-align: center; flex-shrink: 0; transition: transform 0.25s; }
+        .overlay-item:hover .overlay-item-icon { transform: scale(1.2) rotate(-5deg); }
+        .overlay-item-text { font-family: 'Cinzel', serif; font-size: 1.3rem; font-weight: 600; letter-spacing: 0.06em; color: rgba(245,240,232,0.7); transition: color 0.25s; }
+        .overlay-item:hover .overlay-item-text { color: var(--gold-lt); }
+        .overlay-item-desc { font-size: 0.72rem; color: var(--muted); margin-left: auto; letter-spacing: 0.04em; transition: color 0.25s; flex-shrink: 0; }
+        .overlay-item:hover .overlay-item-desc { color: rgba(201,168,76,0.6); }
+        .overlay-divider { width: 60px; height: 1px; background: rgba(201,168,76,0.2); margin: 0.75rem 0; }
+        .overlay-item.is-admin .overlay-item-text { color: rgba(160,210,170,0.6); }
+        .overlay-item.is-admin:hover .overlay-item-text { color: #a5d6a7; }
+        .overlay-item.is-admin::after { background: #4caf50; }
+
+        .overlay.open .overlay-item { animation: slideIn 0.4s ease both; }
+        .overlay.open .overlay-item:nth-child(1)  { animation-delay: 0.03s; }
+        .overlay.open .overlay-item:nth-child(2)  { animation-delay: 0.06s; }
+        .overlay.open .overlay-item:nth-child(3)  { animation-delay: 0.09s; }
+        .overlay.open .overlay-item:nth-child(4)  { animation-delay: 0.12s; }
+        .overlay.open .overlay-item:nth-child(5)  { animation-delay: 0.15s; }
+        .overlay.open .overlay-item:nth-child(6)  { animation-delay: 0.18s; }
+        .overlay.open .overlay-item:nth-child(7)  { animation-delay: 0.21s; }
+        .overlay.open .overlay-item:nth-child(8)  { animation-delay: 0.24s; }
+        .overlay.open .overlay-item:nth-child(9)  { animation-delay: 0.27s; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+
+        .overlay-logout-form { width: 100%; max-width: 420px; margin-top: 0.25rem; }
+        .overlay-logout-form button {
+            all: unset; display: flex; align-items: center; justify-content: center;
+            gap: 14px; padding: 10px 40px;
+            position: relative; cursor: pointer;
+            transition: all 0.25s; border-radius: 4px; overflow: hidden; width: 100%;
+        }
+        .overlay-logout-form button::before {
+            content: ''; position: absolute; left: 0; right: 0; top: 50%; bottom: 50%;
+            background: rgba(220,80,80,0.06);
+            transition: top 0.25s, bottom 0.25s; border-radius: 4px;
+        }
+        .overlay-logout-form button:hover::before { top: 0; bottom: 0; }
+        .overlay-logout-form button::after {
+            content: ''; position: absolute; left: 0; top: 50%; bottom: 50%;
+            width: 2px; background: #e53935;
+            transition: top 0.25s, bottom 0.25s;
+        }
+        .overlay-logout-form button:hover::after { top: 10%; bottom: 10%; }
+        .overlay-logout-form .btn-icon { font-size: 1.1rem; width: 28px; text-align: center; transition: transform 0.25s; }
+        .overlay-logout-form button:hover .btn-icon { transform: scale(1.2) rotate(-5deg); }
+        .overlay-logout-form .btn-label { font-family: 'Cinzel', serif; font-size: 1.3rem; font-weight: 600; letter-spacing: 0.06em; color: rgba(220,150,150,0.6); transition: color 0.25s; }
+        .overlay-logout-form button:hover .btn-label { color: #ef9a9a; }
+
+        /* ══════════════════════════════════════
+           MAIN
+        ══════════════════════════════════════ */
+        main { flex: 1; display: flex; justify-content: center; align-items: flex-start; padding: 48px 24px; position: relative; z-index: 1; }
+
+        /* ══════════════════════════════════════
+           CARDS
+        ══════════════════════════════════════ */
+        .card { background: var(--panel); border: 1px solid rgba(201,168,76,0.22); border-radius: 16px; padding: 2.5rem; width: 100%; max-width: 500px; box-shadow: 0 8px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(201,168,76,0.08); animation: fadeUp 0.4s ease both; }
+        .card-wide { max-width: 980px; }
+        .card-md   { max-width: 680px; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ══════════════════════════════════════
+           TYPOGRAPHY
+        ══════════════════════════════════════ */
+        h1, h2 { font-family: 'Cinzel', serif; color: var(--gold-lt); font-size: 1.45rem; font-weight: 600; text-align: center; letter-spacing: 0.05em; padding-bottom: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(201,168,76,0.18); }
+        h1 { font-size: 1.8rem; }
+        h3 { font-family: 'Cinzel', serif; color: var(--gold); font-size: 0.95rem; font-weight: 600; margin: 1.5rem 0 0.75rem; letter-spacing: 0.04em; }
+        h4 { color: var(--muted); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin: 1rem 0 0.5rem; }
+        p { line-height: 1.75; color: rgba(245,240,232,0.78); font-size: 0.93rem; }
+
+        /* ══════════════════════════════════════
+           FORMS
+        ══════════════════════════════════════ */
+        label { display: block; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 1.2rem 0 0.4rem; }
+        input[type=text], input[type=email], input[type=password], input[type=datetime-local], input[type=number], input[type=file], textarea, select { width: 100%; padding: 11px 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(201,168,76,0.2); border-radius: 8px; color: var(--parch); font-family: 'Raleway', sans-serif; font-size: 0.9rem; transition: border-color 0.2s, box-shadow 0.2s; outline: none; }
+        input:focus, textarea:focus, select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12); }
+        input::placeholder, textarea::placeholder { color: rgba(160,144,112,0.45); }
+        textarea { min-height: 110px; resize: vertical; }
+        select { cursor: pointer; }
+        select option { background: var(--deep); }
+
+        /* ══════════════════════════════════════
+           BUTTONS
+        ══════════════════════════════════════ */
+        .btn, button[type=submit] { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px 20px; background: linear-gradient(135deg, var(--gold-dk) 0%, var(--gold) 100%); color: var(--ink); border: none; border-radius: 8px; font-family: 'Cinzel', serif; font-size: 0.88rem; font-weight: 700; letter-spacing: 0.05em; cursor: pointer; text-decoration: none; text-align: center; margin-top: 1.25rem; transition: all 0.2s ease; position: relative; overflow: hidden; }
+        .btn::after, button[type=submit]::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at var(--rx,50%) var(--ry,50%), rgba(255,255,255,0.25) 0%, transparent 65%); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .btn:hover::after, button[type=submit]:hover::after { opacity: 1; }
+        .btn:hover, button[type=submit]:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(201,168,76,0.35); }
+        .btn:active, button[type=submit]:active { transform: scale(0.97); }
+        .btn-sm { width: auto; padding: 5px 13px; font-size: 0.73rem; margin-top: 0; border-radius: 6px; }
+        .btn-ghost { background: transparent; color: var(--gold); border: 1px solid rgba(201,168,76,0.35); }
+        .btn-ghost:hover { background: rgba(201,168,76,0.08); color: var(--gold-lt); }
+        .btn-success { background: linear-gradient(135deg, #1a5c27, #2a7d38); color: #c8f0d0; }
+        .btn-success:hover { background: linear-gradient(135deg, #2a7d38, #3a9d4a); color: #fff; }
+        .btn-danger { background: linear-gradient(135deg, #6b1616, #8b2020); color: #ffd0d0; }
+        .btn-danger:hover { background: linear-gradient(135deg, #8b2020, #ab3030); }
+        .btn-blue { background: linear-gradient(135deg, #1565c0, #1976d2); color: #bbdefb; }
+
+        /* ══════════════════════════════════════
+           TABLE
+        ══════════════════════════════════════ */
+        .table-wrap { overflow-x: auto; margin-top: 1rem; border-radius: 10px; border: 1px solid rgba(201,168,76,0.14); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+        thead th { background: rgba(201,168,76,0.08); color: var(--gold); font-family: 'Cinzel', serif; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 11px 16px; text-align: left; border-bottom: 1px solid rgba(201,168,76,0.18); }
+        tbody td { padding: 11px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); color: rgba(245,240,232,0.83); vertical-align: middle; }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr { transition: background 0.18s; }
+        tbody tr:hover td { background: rgba(201,168,76,0.05); }
+        .inline-form { display: inline-flex; margin: 0; }
+
+        /* ══════════════════════════════════════
+           BADGES
+        ══════════════════════════════════════ */
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; }
+        .badge-pending  { background: rgba(201,168,76,0.15); color: var(--gold-lt);  border: 1px solid rgba(201,168,76,0.3); }
+        .badge-working  { background: rgba(25,118,210,0.15); color: #90caf9;          border: 1px solid rgba(25,118,210,0.3); }
+        .badge-answered { background: rgba(42,107,53,0.2);   color: #a5d6a7;          border: 1px solid rgba(42,107,53,0.4); }
+        .badge-done     { background: rgba(100,100,100,0.15);color: #bdbdbd;           border: 1px solid rgba(150,150,150,0.2); }
+
+        /* ══════════════════════════════════════
+           MESSAGES (inline)
+        ══════════════════════════════════════ */
+        .msg { padding: 11px 15px; border-radius: 8px; font-size: 0.87rem; margin: 0.75rem 0; }
+        .msg-success { background: rgba(42,107,53,0.2);  color: #a5d6a7; border-left: 3px solid #4caf50; }
+        .msg-info    { background: rgba(25,118,210,0.15);color: #90caf9;  border-left: 3px solid #1976d2; }
+        .msg-error   { background: rgba(139,32,32,0.2);  color: #ef9a9a; border-left: 3px solid #e53935; }
+        .toast {
+            position: fixed;
+            top: 92px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 300;
+            width: min(92vw, 560px);
+            padding: 14px 18px;
+            border-radius: 12px;
+            border: 1px solid rgba(201,168,76,0.32);
+            background: linear-gradient(135deg, rgba(17,41,24,0.98), rgba(8,31,14,0.98));
+            box-shadow: 0 12px 36px rgba(0,0,0,0.5);
+            color: var(--parch);
+            text-align: center;
+            animation: toastIn 0.35s ease both;
+        }
+        .toast-error { border-color: rgba(229,57,53,0.55); color: #ffcdd2; }
+        @keyframes toastIn { from { opacity: 0; transform: translate(-50%, -14px); } to { opacity: 1; transform: translate(-50%, 0); } }
+        .answer-block { background: rgba(42,107,53,0.14); border: 1px solid rgba(42,107,53,0.28); border-radius: 10px; padding: 1rem 1.25rem; font-style: italic; color: #c8e6c9; line-height: 1.75; }
+        .answer-empty { color: var(--muted); font-style: italic; font-size: 0.9rem; }
+
+        /* ══════════════════════════════════════
+           STATS
+        ══════════════════════════════════════ */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 2rem; }
+        .stat-card { background: rgba(0,0,0,0.22); border: 1px solid rgba(201,168,76,0.13); border-radius: 10px; padding: 1.1rem 1rem; text-align: center; transition: border-color 0.2s, transform 0.2s; }
+        .stat-card:hover { border-color: rgba(201,168,76,0.3); transform: translateY(-2px); }
+        .stat-card .stat-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 8px; }
+        .stat-card .stat-value { font-family: 'Cinzel', serif; font-size: 2rem; font-weight: 700; color: var(--gold-lt); line-height: 1; }
+        .stat-card.stat-blue .stat-value  { color: #90caf9; }
+        .stat-card.stat-green .stat-value { color: #a5d6a7; }
+
+        .review-card { background: rgba(0,0,0,0.18); border: 1px solid rgba(201,168,76,0.13); border-left: 3px solid var(--gold-dk); border-radius: 0 10px 10px 0; padding: 1rem 1.25rem; margin-bottom: 1rem; transition: border-left-color 0.2s; }
+        .review-card:hover { border-left-color: var(--gold); }
+        .review-text { color: rgba(245,240,232,0.88); line-height: 1.7; margin-bottom: 8px; }
+        .review-meta { font-size: 0.73rem; color: var(--muted); }
+        .warranty-block { background: rgba(201,168,76,0.07); border: 1px solid rgba(201,168,76,0.22); border-radius: 10px; padding: 1rem 1.25rem; font-family: monospace; font-size: 0.84rem; color: var(--gold-lt); white-space: pre-wrap; line-height: 1.7; }
+        .service-detail { background: rgba(0,0,0,0.18); border-radius: 8px; padding: 0.75rem 1rem; color: rgba(245,240,232,0.83); font-size: 0.9rem; line-height: 1.6; margin-bottom: 0.5rem; }
+
+        footer { text-align: center; padding: 20px; color: rgba(160,144,112,0.35); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; border-top: 1px solid rgba(201,168,76,0.07); position: relative; z-index: 1; }
+    </style>
+</head>
+<body>
+
+<!-- ═══ TOAST CONTAINER ═══ -->
+<div id="toast-container"></div>
+
+{% if toast_message %}
+<script>
+    window.__initToast = { msg: {{ toast_message | tojson }}, type: "{{ toast_type | default('warn') }}" };
+</script>
+{% endif %}
+
+<!-- ═══ TICKER ═══ -->
+<div class="ticker-bar">
+    <div class="ticker-label">⚜ НОВИНИ</div>
+    <div class="ticker-track">
+        <div class="ticker-inner" id="tickerInner">
+            <span class="ticker-item"><span class="dot"></span> Подайте нову заявку через портал — <a href="/add_my_problem">Створити клопотання</a></span>
+            <span class="ticker-item"><span class="dot"></span> Відслідковуйте статус вашої справи в особистому кабінеті</span>
+            <span class="ticker-item"><span class="dot"></span> Після завершення ремонту видається гарантійний талон на 180 днів</span>
+            <span class="ticker-item"><span class="dot"></span> Підключіть Telegram-бот для миттєвих сповіщень про зміну статусу</span>
+            <span class="ticker-item"><span class="dot"></span> Залиште відгук після завершення вашої заявки — <a href="/reviews">Книга відгуків</a></span>
+            <span class="ticker-item"><span class="dot"></span> Гільдія майстрів працює щодня з 09:00 до 18:00</span>
+            <span class="ticker-item"><span class="dot"></span> Подайте нову заявку через портал — <a href="/add_my_problem">Створити клопотання</a></span>
+            <span class="ticker-item"><span class="dot"></span> Відслідковуйте статус вашої справи в особистому кабінеті</span>
+            <span class="ticker-item"><span class="dot"></span> Після завершення ремонту видається гарантійний талон на 180 днів</span>
+            <span class="ticker-item"><span class="dot"></span> Підключіть Telegram-бот для миттєвих сповіщень про зміну статусу</span>
+            <span class="ticker-item"><span class="dot"></span> Залиште відгук після завершення вашої заявки — <a href="/reviews">Книга відгуків</a></span>
+            <span class="ticker-item"><span class="dot"></span> Гільдія майстрів працює щодня з 09:00 до 18:00</span>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ TOPBAR ═══ -->
+<div class="topbar">
+    <div class="topbar-inner">
+        <a href="/" class="logo">
+            <span class="logo-main">⚜ Цитадель</span>
+            <span class="logo-sub">Центр Обслуговування</span>
+        </a>
+
+        <nav class="nav-quick" id="navQuick">
+            <a href="/">🏛 Головна</a>
+            <a href="/add_my_problem">📜 Нова заявка</a>
+            <a href="/all_my_problems">📋 Мої заявки</a>
+            <a href="/reviews">📖 Відгуки</a>
+            <span class="nav-sep"></span>
+            <a href="/new_problems" class="admin-link">⚡ Нові</a>
+            <a href="/admin_problems" class="admin-link">⚔ У роботі</a>
+            <a href="/admin/stats" class="admin-link">📊 Аналітика</a>
+            <span class="nav-sep"></span>
+            {% if current_user %}
+            <span class="user-pill">✅ Увійшли як <strong>{{ current_user.username or ('ID ' ~ current_user.user_id) }}</strong></span>
+            {% else %}
+                <a href="/login">🔑 Вхід</a>
+                <a href="/register">📝 Реєстрація</a>
+            {% endif %}
+        </nav>
+
+        <button class="burger" id="burgerBtn" aria-label="Відкрити меню">
+            <span class="burger-line"></span>
+            <span class="burger-line"></span>
+            <span class="burger-line"></span>
+        </button>
+    </div>
+</div>
+
+<!-- ═══ OVERLAY ═══ -->
+<div class="overlay" id="menuOverlay">
+    <div class="overlay-bg" id="overlayBg"></div>
+    <div class="overlay-deco"></div>
+    <button class="overlay-close" id="overlayClose">✕</button>
+    <div class="overlay-content">
+        <div class="overlay-logo">⚜ &nbsp; Цитадель Ордену &nbsp; ⚜</div>
+
+        {% if current_user %}
+        <div class="overlay-user-block">
+            <div class="overlay-user-avatar">
+                {% if current_user.role == 'admin' %}⚔{% else %}👤{% endif %}
+            </div>
+            <div>
+                <div class="overlay-user-name">
+                    {% if current_user.role == 'admin' %}Адміністратор{% else %}Користувач #{{ current_user.user_id }}{% endif %}
+                </div>
+                <div class="overlay-user-role">
+                    {% if current_user.role == 'admin' %}Повний доступ{% else %}Звичайний користувач{% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <a href="/" class="overlay-item">
+            <span class="overlay-item-icon">🏛</span>
+            <span class="overlay-item-text">Головна</span>
+            <span class="overlay-item-desc">Портал</span>
+        </a>
+        <a href="/add_my_problem" class="overlay-item">
+            <span class="overlay-item-icon">📜</span>
+            <span class="overlay-item-text">Нова заявка</span>
+            <span class="overlay-item-desc">Клопотання</span>
+        </a>
+        <a href="/all_my_problems" class="overlay-item">
+            <span class="overlay-item-icon">📋</span>
+            <span class="overlay-item-text">Мої заявки</span>
+            <span class="overlay-item-desc">Кабінет</span>
+        </a>
+        <a href="/reviews" class="overlay-item">
+            <span class="overlay-item-icon">📖</span>
+            <span class="overlay-item-text">Відгуки</span>
+            <span class="overlay-item-desc">Книга записів</span>
+        </a>
+
+        <div class="overlay-divider"></div>
+        <div class="overlay-section">Адміністрація</div>
+
+        <a href="/new_problems" class="overlay-item is-admin">
+            <span class="overlay-item-icon">⚡</span>
+            <span class="overlay-item-text">Нові клопотання</span>
+            <span class="overlay-item-desc">Вхідні</span>
+        </a>
+        <a href="/admin_problems" class="overlay-item is-admin">
+            <span class="overlay-item-icon">⚔</span>
+            <span class="overlay-item-text">У роботі</span>
+            <span class="overlay-item-desc">Активні</span>
+        </a>
+        <a href="/admin/stats" class="overlay-item is-admin">
+            <span class="overlay-item-icon">📊</span>
+            <span class="overlay-item-text">Аналітика</span>
+            <span class="overlay-item-desc">Звіт</span>
+        </a>
+
+        {% if current_user %}
+        <div class="overlay-item">
+            <span class="overlay-item-icon">✅</span>
+            <span class="overlay-item-text">{{ current_user.username or ('ID ' ~ current_user.user_id) }}</span>
+            <span class="overlay-item-desc">Ви у системі</span>
+        </div>
+        <form action="/logout" method="post" class="overlay-logout-form">
+            <button type="submit">
+                <span class="btn-icon">🚪</span>
+                <span class="btn-label">Вийти</span>
+            </button>
+        </form>
+        {% else %}
+        <a href="/login" class="overlay-item">
+            <span class="overlay-item-icon">🔑</span>
+            <span class="overlay-item-text">Вхід</span>
+            <span class="overlay-item-desc">У покої</span>
+        </a>
+        <a href="/register" class="overlay-item">
+            <span class="overlay-item-icon">📝</span>
+            <span class="overlay-item-text">Реєстрація</span>
+            <span class="overlay-item-desc">Присяга</span>
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+{% if toast_message %}
+<div class="toast toast-{{ toast_type or 'info' }}" role="alert">{{ toast_message }}</div>
+{% endif %}
+
+
+<main>{% block content %}{% endblock %}</main>
+<footer>⚜ Цитадель Ордену &nbsp;·&nbsp; Всі права захищено</footer>
+
+<script>
+/* ── Burger ── */
+const burger  = document.getElementById('burgerBtn');
+const overlay = document.getElementById('menuOverlay');
+const bg      = document.getElementById('overlayBg');
+const closeBtn= document.getElementById('overlayClose');
+function openMenu()  { overlay.classList.add('open');  burger.classList.add('open');  document.body.style.overflow='hidden'; }
+function closeMenu() { overlay.classList.remove('open'); burger.classList.remove('open'); document.body.style.overflow=''; }
+burger.addEventListener('click', () => overlay.classList.contains('open') ? closeMenu() : openMenu());
+closeBtn.addEventListener('click', closeMenu);
+bg.addEventListener('click', closeMenu);
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeMenu(); });
+
+/* ── Active link ── */
+const path = window.location.pathname;
+document.querySelectorAll('.nav-quick a, .overlay-item').forEach(a => {
+    if(a.getAttribute('href') === path) a.classList.add('active-link');
+});
+
+/* ── Ripple ── */
+document.querySelectorAll('.nav-quick a, .btn, button[type=submit]').forEach(el => {
+    el.addEventListener('mousemove', e => {
+        const r = el.getBoundingClientRect();
+        el.style.setProperty('--rx', ((e.clientX-r.left)/r.width*100)+'%');
+        el.style.setProperty('--ry', ((e.clientY-r.top)/r.height*100)+'%');
+    });
+});
+
+/* ── Status badges ── */
+const statusMap = {'В обробці':'badge-pending','У роботі':'badge-working','Є відповідь':'badge-answered','Завершено':'badge-done'};
+document.querySelectorAll('.status-cell').forEach(el => {
+    const t = el.textContent.trim();
+    el.innerHTML = `<span class="badge ${statusMap[t]||'badge-pending'}">${t}</span>`;
+});
+
+/* ── Ticker wheel ── */
+const tickerEl = document.getElementById('tickerInner');
+if(tickerEl) {
+    tickerEl.parentElement.addEventListener('wheel', e => {
+        e.preventDefault();
+        const spd = parseFloat(getComputedStyle(tickerEl).animationDuration)||38;
+        tickerEl.style.animationDuration = Math.max(8, spd + (e.deltaY>0?3:-3))+'s';
+    }, {passive:false});
+}
+
+/* ══════════════════════════════════════
+   TOAST SYSTEM
+══════════════════════════════════════ */
+function showToast(msg, type='warn', duration=5000) {
+    const icons = { warn:'⚠️', error:'🚫', success:'✅', info:'ℹ️' };
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<span class="toast-icon">${icons[type]||'⚠️'}</span><span class="toast-msg">${msg}</span><span class="toast-close">✕</span>`;
+    container.appendChild(toast);
+
+    const dismiss = () => {
+        toast.classList.add('hiding');
+        toast.addEventListener('animationend', () => toast.remove(), {once:true});
+    };
+    toast.addEventListener('click', dismiss);
+    if(duration > 0) setTimeout(dismiss, duration);
+}
+
+/* Auto-show toast from server if present */
+if(window.__initToast) {
+    showToast(window.__initToast.msg, window.__initToast.type);
+}
+
+/* Expose globally so pages can call it */
+window.showToast = showToast;
+</script>
+</body>
+</html>

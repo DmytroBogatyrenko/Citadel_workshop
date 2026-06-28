@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Відповідь на заявку — Цитадель{% endblock %}
+{% block content %}
+<style>
+    .message-textarea { min-height: 160px; }
+    .btn-margin-top { margin-top: 0.75rem; }
+</style>
+<div class="card card-md">
+    <h2>💬 Відповідь на Запит #{{ id }}</h2>
+    {% if message %}<div class="msg msg-success">{{ message }}</div>{% endif %}
+    <form method="post">
+        <input type="hidden" name="problem_id" value="{{ id }}">
+        <label for="message">Ваші вказівки або рішення</label>
+        <textarea id="message" name="message" class="message-textarea" placeholder="Напишіть детальну відповідь для заявника..." required></textarea>
+        <button type="submit">📤 Надіслати заявнику</button>
+    </form>
+    <a href="/admin_problems" class="btn btn-ghost btn-margin-top">← Повернутися</a>
+</div>
+{% endblock %}

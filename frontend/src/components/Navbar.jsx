@@ -26,7 +26,7 @@ function Navbar({ currentUser, setCurrentUser }) {
   }, [location.pathname])
 
   const handleLogout = async () => {
-    await fetch('https://citadelworkshop.duckdns.org/api/logout', {
+    await fetch('/api/logout', {
       method: 'POST',
       credentials: 'include',
     })

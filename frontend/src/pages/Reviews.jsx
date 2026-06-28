@@ -14,7 +14,7 @@ function Reviews({ currentUser }) {
 
     const fetchReviews = async () => {
       try {
-        const response = await fetch('https://citadelworkshop.duckdns.org/api/reviews', {
+        const response = await fetch('/api/reviews', {
           credentials: 'include',
         })
         if (!response.ok) {
@@ -52,7 +52,7 @@ function Reviews({ currentUser }) {
     formData.append('text', text)
 
     try {
-      const response = await fetch('https://citadelworkshop.duckdns.org/api/reviews', {
+      const response = await fetch('/api/reviews', {
         method: 'POST',
         credentials: 'include',
         body: formData,
@@ -65,7 +65,7 @@ function Reviews({ currentUser }) {
       }
 
       setText('')
-      const refreshed = await fetch('https://citadelworkshop.duckdns.org/api/reviews', { credentials: 'include' })
+      const refreshed = await fetch('/api/reviews', { credentials: 'include' })
       const data = await refreshed.json()
       setReviews(data.reviews)
       setCanLeaveReview(data.can_leave_review)

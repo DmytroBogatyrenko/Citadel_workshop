@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+{% block title %}Цитадель Ордену — Головна{% endblock %}
+{% block content %}
+<style>
+/* ── PAGE LAYOUT ── */
+.home-wrap {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    width: 100%;
+    max-width: 960px;
+    align-items: start;
+}
+@media (max-width: 700px) {
+    .home-wrap { grid-template-columns: 1fr; }
+}
+
+/* ── HERO CARD ── */
+.hero-card {
+    background: var(--panel);
+    border: 1px solid rgba(201,168,76,0.22);
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    box-shadow: 0 8px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(201,168,76,0.08);
+    animation: fadeUp 0.4s ease both;
+    grid-column: 1 / -1;
+    position: relative;
+    overflow: hidden;
+}
+.hero-card::before {
+    content: '⚜';
+    position: absolute;
+    font-size: 14rem;
+    color: rgba(201,168,76,0.03);
+    right: -2rem;
+    top: -2rem;
+    line-height: 1;
+    pointer-events: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.crest {
+    font-size: 3.5rem;
+    display: block;
+    margin-bottom: 1rem;
+    animation: float 5s ease-in-out infinite;
+}
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+.hero-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: var(--gold-lt);
+    letter-spacing: 0.08em;
+    border: none;
+    padding: 0;
+    margin-bottom: 0.3rem;
+}
+.hero-sub {
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold-dk);
+    margin-bottom: 1rem;
+}
+.hero-divider {
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dk), transparent);
+    margin: 1rem auto;
+}
+.hero-desc {
+    color: rgba(245,240,232,0.6);
+    font-size: 0.92rem;
+    line-height: 1.8;
+    max-width: 520px;
+    margin: 0 auto 1.75rem;
+}
+.hero-btns {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+.hero-btns .btn {
+    width: auto;
+    padding: 12px 28px;
+    font-size: 0.85rem;
+    margin-top: 0;
+}
+
+/* ── QUICK-ACCESS GRID ── */
+.qa-card {
+    background: var(--panel);
+    border: 1px solid rgba(201,168,76,0.18);
+    border-radius: 14px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+    animation: fadeUp 0.5s ease both;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.qa-card h3 {
+    font-size: 0.78rem;
+    letter-spacing: 0.15em;
+    color: var(--gold-dk);
+    margin: 0 0 4px;
+    text-transform: uppercase;
+}
+.qa-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 9px;
+    text-decoration: none;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(201,168,76,0.1);
+    transition: all 0.22s;
+    position: relative;
+    overflow: hidden;
+}
+.qa-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(201,168,76,0.08), transparent);
+    opacity: 0;
+    transition: opacity 0.22s;
+}
+.qa-link:hover { border-color: rgba(201,168,76,0.35); transform: translateX(4px); }
+.qa-link:hover::after { opacity: 1; }
+.qa-link-icon { font-size: 1.2rem; flex-shrink: 0; width: 28px; text-align: center; transition: transform 0.22s; }
+.qa-link:hover .qa-link-icon { transform: scale(1.15); }
+.qa-link-body { flex: 1; min-width: 0; }
+.qa-link-title { font-size: 0.88rem; font-weight: 600; color: rgba(245,240,232,0.85); display: block; transition: color 0.22s; }
+.qa-link:hover .qa-link-title { color: var(--gold-lt); }
+.qa-link-hint { font-size: 0.72rem; color: var(--muted); }
+.qa-link-arrow { color: var(--gold-dk); font-size: 0.85rem; flex-shrink: 0; transition: transform 0.22s; }
+.qa-link:hover .qa-link-arrow { transform: translateX(3px); color: var(--gold); }
+.qa-card.delay-1 { animation-delay: 0.1s; }
+.qa-card.delay-2 { animation-delay: 0.15s; }
+
+/* ── HOW IT WORKS ── */
+.steps-card {
+    grid-column: 1 / -1;
+    background: var(--panel);
+    border: 1px solid rgba(201,168,76,0.18);
+    border-radius: 14px;
+    padding: 1.75rem 1.75rem 1.25rem;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+    animation: fadeUp 0.6s ease both;
+}
+.steps-card h3 {
+    text-align: center;
+    margin-bottom: 1.25rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+.steps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+}
+.step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    padding: 1rem 0.75rem;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.18);
+    border: 1px solid rgba(201,168,76,0.08);
+    transition: border-color 0.2s, transform 0.2s;
+    position: relative;
+}
+.step-item:hover { border-color: rgba(201,168,76,0.28); transform: translateY(-3px); }
+.step-num {
+    font-family: 'Cinzel', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: rgba(201,168,76,0.25);
+    line-height: 1;
+}
+.step-icon { font-size: 1.4rem; }
+.step-label { font-size: 0.8rem; font-weight: 600; color: rgba(245,240,232,0.75); }
+.step-desc  { font-size: 0.72rem; color: var(--muted); line-height: 1.5; }
+
+/* ── INFO CHIPS ── */
+.info-chips {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    animation: fadeUp 0.7s ease both;
+}
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(201,168,76,0.15);
+    font-size: 0.75rem;
+    color: rgba(245,240,232,0.55);
+    transition: all 0.2s;
+}
+.chip:hover { border-color: rgba(201,168,76,0.35); color: rgba(245,240,232,0.8); }
+.chip-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold-dk); flex-shrink: 0; }
+</style>
+
+<div class="home-wrap">
+
+    <!-- Hero -->
+    <div class="hero-card">
+        <span class="crest">⚜️</span>
+        <h1 class="hero-title">Цитадель Ордену</h1>
+        <p class="hero-sub">Офіційний центр сервісного обслуговування</p>
+        <div class="hero-divider"></div>
+        <p class="hero-desc">
+            Портал для подачі та відстеження сервісних звернень. Гільдія майстрів опрацює вашу заявку, надасть відповідь та видасть гарантійний документ після завершення робіт.
+        </p>
+        <div class="hero-btns">
+            <a href="/add_my_problem" class="btn">📜 Подати заявку</a>
+            <a href="/all_my_problems" class="btn btn-ghost">📋 Мої заявки</a>
+            <a href="/reviews" class="btn btn-ghost">📖 Відгуки</a>
+        </div>
+    </div>
+
+    <!-- Quick access — user -->
+    <div class="qa-card delay-1">
+        <h3>👤 Для клієнтів</h3>
+        <a href="/add_my_problem" class="qa-link">
+            <span class="qa-link-icon">📜</span>
+            <span class="qa-link-body">
+                <span class="qa-link-title">Нова заявка</span>
+                <span class="qa-link-hint">Опишіть проблему майстрам</span>
+            </span>
+            <span class="qa-link-arrow">›</span>
+        </a>
+        <a href="/all_my_problems" class="qa-link">
+            <span class="qa-link-icon">📋</span>
+            <span class="qa-link-body">
+                <span class="qa-link-title">Мої заявки</span>
+                <span class="qa-link-hint">Відслідковуйте статус</span>
+            </span>
+            <span class="qa-link-arrow">›</span>
+        </a>
+        <a href="/reviews" class="qa-link">
+            <span class="qa-link-icon">📖</span>
+            <span class="qa-link-body">
+                <span class="qa-link-title">Відгуки</span>
+                <span class="qa-link-hint">Книга записів народу</span>
+            </span>
+            <span class="qa-link-arrow">›</span>
+        </a>
+        <a href="/register" class="qa-link">
+            <span class="qa-link-icon">📝</span>
+            <span class="qa-link-body">
+                <span class="qa-link-title">Реєстрація</span>
+                <span class="qa-link-hint">Приєднатися до порталу</span>
+            </span>
+            <span class="qa-link-arrow">›</span>
+        </a>
+    </div>
+
+    <!-- Quick access — admin -->
+    <div class="qa-card delay-2">
+        <h3>⚔ Для адміністрації</h3>
+        <a href="/new_problems" class="qa-link">
+            <span class="qa-link-icon">⚡</span>
+            <span class="qa-link-body">
+                <span class="qa-link-title">Нові клопотання</span>
+                <span class="qa-link-hint">Вхідні необроблені заявки</span>
+            </span>
+            <span class="qa-link-arrow">›</span>
+        </a>
+        <a href="/admin_problems" class="qa-link">
+            <span class="qa-link-icon">⚔</span>
+            <span class="qa-link-body">
+                <span class="qa-link-title">У роботі</span>
+                <span class="qa-link-hint">Активні справи магістрів</span>
+            </span>
+            <span class="qa-link-arrow">›</span>
+        </a>
+        <a href="/admin/stats" class="qa-link">
+            <span class="qa-link-icon">📊</span>
+            <span class="qa-link-body">
+                <span class="qa-link-title">Аналітика</span>
+                <span class="qa-link-hint">Звіт та статистика</span>
+            </span>
+            <span class="qa-link-arrow">›</span>
+        </a>
+        <a href="/login" class="qa-link">
+            <span class="qa-link-icon">🔑</span>
+            <span class="qa-link-body">
+                <span class="qa-link-title">Вхід</span>
+                <span class="qa-link-hint">Зайти до системи</span>
+            </span>
+            <span class="qa-link-arrow">›</span>
+        </a>
+    </div>
+
+    <!-- How it works -->
+    <div class="steps-card">
+        <h3>⚙ Як це працює</h3>
+        <div class="steps-grid">
+            <div class="step-item">
+                <div class="step-num">01</div>
+                <div class="step-icon">📝</div>
+                <div class="step-label">Реєстрація</div>
+                <div class="step-desc">Створіть акаунт на порталі</div>
+            </div>
+            <div class="step-item">
+                <div class="step-num">02</div>
+                <div class="step-icon">📜</div>
+                <div class="step-label">Подача заявки</div>
+                <div class="step-desc">Опишіть проблему, додайте фото</div>
+            </div>
+            <div class="step-item">
+                <div class="step-num">03</div>
+                <div class="step-icon">🔔</div>
+                <div class="step-label">Сповіщення</div>
+                <div class="step-desc">Telegram-бот надішле оновлення</div>
+            </div>
+            <div class="step-item">
+                <div class="step-num">04</div>
+                <div class="step-icon">⚔</div>
+                <div class="step-label">Обробка</div>
+                <div class="step-desc">Майстер бере справу в роботу</div>
+            </div>
+            <div class="step-item">
+                <div class="step-num">05</div>
+                <div class="step-icon">✅</div>
+                <div class="step-label">Завершення</div>
+                <div class="step-desc">Видається гарантійний талон</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info chips -->
+    <div class="info-chips">
+        <span class="chip"><span class="chip-dot"></span> Гарантія 180 днів</span>
+        <span class="chip"><span class="chip-dot"></span> Telegram-сповіщення</span>
+        <span class="chip"><span class="chip-dot"></span> Робота 09:00 – 18:00</span>
+        <span class="chip"><span class="chip-dot"></span> Фото до заявки</span>
+        <span class="chip"><span class="chip-dot"></span> Захист даних</span>
+        <span class="chip"><span class="chip-dot"></span> Книга відгуків</span>
+    </div>
+
+</div>
+{% endblock %}

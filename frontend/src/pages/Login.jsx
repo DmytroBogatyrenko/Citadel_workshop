@@ -14,7 +14,7 @@ function Login({ setCurrentUser }) {
     setMessage('')
 
     try {
-      const response = await fetch('https://citadelworkshop.duckdns.org/api/login', {
+      const response = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -42,7 +42,7 @@ function Login({ setCurrentUser }) {
     setMessage('')
 
     try {
-      const response = await fetch('https://citadelworkshop.duckdns.org/api/register', {
+      const response = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password }),

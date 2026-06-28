@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Аналітика — Цитадель{% endblock %}
+{% block content %}
+    <style>
+        .stat-value-large { font-size: 1.3rem; padding-top: 0.35rem; }
+        .muted-cell { color: var(--muted); }
+    </style>
+<div class="card card-wide">
+    <h2>📊 Звіт Магістрів Аналітики</h2>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Активні прохання</div>
+            <div class="stat-value stat-value-gold">{{ active_count }}</div>
+        </div>
+        <div class="stat-card stat-blue">
+            <div class="stat-label">Середній час закриття</div>
+            <div class="stat-value stat-value-large">{{ avg_time }}</div>
+        </div>
+        <div class="stat-card stat-green">
+            <div class="stat-label">Завершено</div>
+            <div class="stat-value">{{ stats['Завершено'] }}</div>
+        </div>
+    </div>
+
+    <h3>📋 Розподіл за статусами</h3>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Статус</th><th>Кількість</th><th>Частка</th></tr></thead>
+            <tbody>
+                {% set total = stats['В обробці'] + stats['У роботі'] + stats['Є відповідь'] + stats['Завершено'] %}
+                <tr>
+                    <td><span class="badge badge-pending">В обробці</span></td>
+                    <td><b>{{ stats['В обробці'] }}</b></td>
+                    <td class="muted-cell">{% if total > 0 %}{{ (stats['В обробці'] / total * 100) | round(1) }}%{% else %}—{% endif %}</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-working">У роботі</span></td>
+                    <td><b>{{ stats['У роботі'] }}</b></td>
+                    <td class="muted-cell">{% if total > 0 %}{{ (stats['У роботі'] / total * 100) | round(1) }}%{% else %}—{% endif %}</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-answered">Є відповідь</span></td>
+                    <td><b>{{ stats['Є відповідь'] }}</b></td>
+                    <td class="muted-cell">{% if total > 0 %}{{ (stats['Є відповідь'] / total * 100) | round(1) }}%{% else %}—{% endif %}</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-done">Завершено</span></td>
+                    <td><b>{{ stats['Завершено'] }}</b></td>
+                    <td class="muted-cell">{% if total > 0 %}{{ (stats['Завершено'] / total * 100) | round(1) }}%{% else %}—{% endif %}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Реєстрація — Цитадель{% endblock %}
+{% block content %}
+<div class="card">
+    <h2>📝 Присяга на Вірність</h2>
+    {% if message %}<div class="msg msg-{{ message_type or 'success' }}">{{ message }}</div>{% endif %}
+    {% if tg_message %}<div class="msg msg-info">{{ tg_message }}</div>{% endif %}
+    <form method="post">
+        <label for="username">Ім'я користувача</label>
+        <input id="username" type="text" name="username" placeholder="Ваш псевдонім" required autocomplete="username">
+        <label for="email">Електронна пошта</label>
+        <input id="email" type="email" name="email" placeholder="your@email.com" required autocomplete="email">
+        <label for="password">Пароль</label>
+        <input id="password" type="password" name="password" placeholder="Мінімум 6 символів" required minlength="6" autocomplete="new-password">
+        <button type="submit">Зареєструватися</button>
+    </form>
+    <style>
+        .register-footer { text-align:center; margin-top:1rem; font-size:0.85rem; color:var(--muted); }
+        .register-footer a { color:var(--gold); text-decoration:none; }
+    </style>
+    <p class="register-footer">
+        Вже є акаунт? <a href="/login">Увійти</a>
+    </p>
+</div>
+{% endblock %}

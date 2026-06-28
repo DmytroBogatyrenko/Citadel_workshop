@@ -15,7 +15,7 @@ function ServiceCheck({ currentUser }) {
 
     const fetchData = async () => {
       try {
-        const response = await fetch(`https://citadelworkshop.duckdns.org/api/service_record_review?id=${id}`, {
+        const response = await fetch(`/api/service_record_review?id=${id}`, {
           credentials: 'include',
         })
         if (!response.ok) {

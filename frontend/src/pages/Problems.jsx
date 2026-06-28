@@ -21,7 +21,7 @@ function Problems({ currentUser }) {
 
     const fetchProblems = async () => {
       try {
-        const response = await fetch('https://citadelworkshop.duckdns.org/api/my_problems', {
+        const response = await fetch('/api/my_problems', {
           credentials: 'include',
         })
 

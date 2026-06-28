@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Аналіз заявки — Цитадель{% endblock %}
+{% block content %}
+<div class="card card-md">
+    <h2>🔍 Аналіз Проблеми #{{ problem.id }}</h2>
+    <h3 class="problem-title">{{ problem.title }}</h3>
+    <p>{{ problem.description }}</p>
+    {% if problem.image_url %}
+    <div class="problem-image">
+        <img src="/static/{{ problem.image_url }}" alt="Зображення до заявки">
+    </div>
+    {% endif %}
+    {% if message %}<div class="msg msg-success">{{ message }}</div>{% endif %}
+
+    <div class="problem-actions">
+        {% if problem.status == 'В обробці' %}
+        <form method="post">
+            <input type="hidden" name="id" value="{{ problem.id }}">
+            <button type="submit">⚔ Взяти у роботу</button>
+        </form>
+        {% elif problem.status == 'У роботі' %}
+        <div class="action-buttons">
+            <a href="/add_answer?problem_id={{ problem.id }}" class="btn btn-ghost">💬 Надати відповідь</a>
+            <a href="/service_complete?problem_id={{ problem.id }}" class="btn btn-blue">✅ Завершити</a>
+        </div>
+        {% else %}
+        <div class="status-info">
+            <span class="status-label">Статус:</span>
+            <span class="status-cell">{{ problem.status }}</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

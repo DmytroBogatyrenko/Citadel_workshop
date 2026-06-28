@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Адмін-панель — Цитадель{% endblock %}
+{% block content %}
+<style>
+    .no-top-margin { margin-top: 0; }
+    .id-cell { color: var(--muted); font-size: 0.8rem; }
+    .title-cell { font-weight: 500; }
+    .user-id-cell { color: var(--muted); }
+</style>
+<div class="card card-wide">
+    <h2>🏛 Головна Панель Управління</h2>
+    <div class="stats-grid">
+        <div class="stat-card stat-gold">
+            <div class="stat-label">В обробці</div>
+            <div class="stat-value">{{ stats['В обробці'] }}</div>
+        </div>
+        <div class="stat-card stat-blue">
+            <div class="stat-label">У роботі</div>
+            <div class="stat-value">{{ stats['У роботі'] }}</div>
+        </div>
+        <div class="stat-card stat-green">
+            <div class="stat-label">Є відповідь</div>
+            <div class="stat-value">{{ stats['Є відповідь'] }}</div>
+        </div>
+    </div>
+
+    <h3 class="no-top-margin">📋 Всі зареєстровані заявки</h3>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>#ID</th><th>Суть</th><th>Клієнт</th><th>Статус</th><th>Дії</th></tr>
+            </thead>
+            <tbody>
+                {% for p in problems %}
+                <tr>
+                    <td class="id-cell">#{{ p.id }}</td>
+                    <td class="title-cell">{{ p.title }}</td>
+                    <td class="user-id-cell">{{ p.user_id }}</td>
+                    <td><span class="status-cell">{{ p.status }}</span></td>
+                    <td>
+                        <form action="/problem/{{ p.id }}/delete" method="post" class="inline-form" onsubmit="return confirm('Видалити заявку #{{ p.id }}?');">
+                            <button type="submit" class="btn btn-sm btn-danger">🗑 Видалити</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

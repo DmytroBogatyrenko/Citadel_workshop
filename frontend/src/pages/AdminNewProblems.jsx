@@ -12,7 +12,7 @@ function AdminNewProblems({ currentUser }) {
 
     const fetchProblems = async () => {
       try {
-        const response = await fetch('https://citadelworkshop.duckdns.org/api/new_problems', {
+        const response = await fetch('/api/new_problems', {
           credentials: 'include',
         })
         if (!response.ok) {
@@ -36,7 +36,7 @@ function AdminNewProblems({ currentUser }) {
     const formData = new FormData()
     formData.append('id', id)
 
-    const response = await fetch('https://citadelworkshop.duckdns.org/api/take_problem', {
+    const response = await fetch('/api/take_problem', {
       method: 'POST',
       credentials: 'include',
       body: formData,

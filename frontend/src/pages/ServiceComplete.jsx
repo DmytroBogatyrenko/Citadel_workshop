@@ -29,7 +29,7 @@ function ServiceComplete({ currentUser }) {
     formData.append('problem_id', problemId)
 
     try {
-      const response = await fetch('https://citadelworkshop.duckdns.org/api/service_complete', {
+      const response = await fetch('/api/service_complete', {
         method: 'POST',
         credentials: 'include',
         body: formData,

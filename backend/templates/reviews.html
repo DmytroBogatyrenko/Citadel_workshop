@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Відгуки — Цитадель{% endblock %}
+{% block content %}
+<div class="card card-md">
+    <style>
+    .review-form-container{
+        background: rgba(0,0,0,0.2);
+        border: 1px solid rgba(201,168,76,0.15);
+        border-radius: 10px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+    .review-submit{ margin-top:0.75rem; }
+    .review-form-title{ margin-top:0; font-size:0.9rem; }
+    .review-textarea{ min-height:100px; }
+    .msg-info-review{ margin-bottom:1.5rem; }
+    .empty-reviews{ text-align:center; padding:2rem; color:var(--muted); }
+    .empty-reviews-icon{ font-size:2rem; margin-bottom:0.5rem; opacity:0.3; }
+    .empty-reviews-text{ color:var(--muted); font-style:italic; }
+    </style>
+    <h2>📖 Книга Відгуків Народу</h2>
+
+    {% if can_leave_review %}
+    <div class="review-form-container">
+        <h3 class="review-form-title">✍ Залишити свій відгук</h3>
+        <form method="post">
+            <textarea name="text" class="review-textarea" placeholder="Поділіться враженнями від сервісу..." required></textarea>
+            <button type="submit" class="review-submit">📝 Записати в Книгу</button>
+        </form>
+    </div>
+    {% else %}
+    <div class="msg msg-info msg-info-review">
+        ✍ Написати відгук можуть лише користувачі, що мають хоча б одну завершену заявку.
+    </div>
+    {% endif %}
+
+    <h3 class="section-title">Всі записи</h3>
+    {% if not reviews %}
+    <div class="empty-reviews">
+        <div class="empty-reviews-icon">📭</div>
+        <p class="empty-reviews-text">Записів ще немає. Станьте першим!</p>
+    </div>
+    {% else %}
+    {% for review in reviews %}
+    <div class="review-card">
+        <p class="review-text">"{{ review.text }}"</p>
+        <div class="review-meta">Користувач #{{ review.user_id }} &nbsp;·&nbsp; {{ review.date_created.strftime('%d.%m.%Y') }}</div>
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}

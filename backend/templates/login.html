@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Вхід — Цитадель{% endblock %}
+{% block content %}
+<div class="card">
+    <h2>🔑 Вхід у Покої</h2>
+    {% if error %}<div class="msg msg-error">{{ error }}</div>{% endif %}
+    <form method="post">
+        <label for="username">Ім'я користувача</label>
+        <input id="username" type="text" name="username" placeholder="Введіть ваше ім'я" required autocomplete="username">
+        <label for="password">Пароль</label>
+        <input id="password" type="password" name="password" placeholder="••••••••" required minlength="6" autocomplete="current-password">
+        <button type="submit">Увійти</button>
+    </form>
+    <p class="login-footer">
+        Немає акаунту? <a href="/register" class="login-link">Зареєструватися</a>
+    </p>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Гарантійний Талон — Цитадель{% endblock %}
+{% block content %}
+<div class="card card-md">
+    <style>
+        .problem-title { text-align: center; margin-top: 0; color: var(--gold-lt); }
+        .status-container { display:flex; justify-content:center; margin-bottom:1.5rem; }
+        .return-link { margin-top:1.5rem; }
+    </style>
+    <h2>🎖 Гарантійний Талон</h2>
+    <h3 class="problem-title">{{ problem.title }}</h3>
+    <div class="status-container">
+        <span class="status-cell">{{ problem.status }}</span>
+    </div>
+
+    <h4>📋 Опис виконаної роботи</h4>
+    <div class="service-detail">{{ service_record.work_done }}</div>
+
+    <h4>🔧 Використані ресурси</h4>
+    <div class="service-detail">{{ service_record.parts_used }}</div>
+
+    <h4>🛡 Гарантійна інформація</h4>
+    <pre class="warranty-block">{{ service_record.warranty_info }}</pre>
+
+    <a href="/all_my_problems" class="btn btn-ghost return-link">← Повернутися до заявок</a>
+</div>
+{% endblock %}

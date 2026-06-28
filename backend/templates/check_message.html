@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Перегляд заявки — Цитадель{% endblock %}
+{% block content %}
+<div class="card card-md">
+    <h2>📨 Деталі Запиту</h2>
+    <h3 class="problem-title">{{ problem.title }}</h3>
+    <p class="problem-description">{{ problem.description }}</p>
+    <div class="status-container">
+        <span class="status-label">Статус:</span>
+        <span class="status-cell">{{ problem.status }}</span>
+    </div>
+    <div class="answer-section">
+        <h3 class="answer-heading">💬 Відповідь Адміністрації</h3>
+        {% if answer %}
+        <div class="answer-block">{{ answer.message }}</div>
+        {% else %}
+        <p class="answer-empty">⏳ Магістри ще вивчають матеріали справи...</p>
+        {% endif %}
+    </div>
+    <a href="/all_my_problems" class="btn btn-ghost back-link">← Повернутися до заявок</a>
+</div>
+{% endblock %}

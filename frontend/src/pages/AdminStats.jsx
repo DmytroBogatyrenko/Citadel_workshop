@@ -21,7 +21,7 @@ function AdminStats({ currentUser, setToast }) {
 
     const fetchStats = async () => {
       try {
-        const response = await fetch('https://citadelworkshop.duckdns.org/api/admin_stats', {
+        const response = await fetch('/api/admin_stats', {
           credentials: 'include',
         })
         if (!response.ok) {
