@@ -30,6 +30,13 @@ function App() {
         return
       }
 
+      if (window.Telegram?.WebApp) {
+        window.Telegram.WebApp.ready()
+        window.Telegram.WebApp.expand()
+        window.Telegram.WebApp.setHeaderColor('#051409')
+        window.Telegram.WebApp.setBackgroundColor('#051409')
+      }
+
       try {
         const response = await fetch('/api/me', {
           method: 'GET',

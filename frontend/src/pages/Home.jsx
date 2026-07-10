@@ -14,6 +14,14 @@ function Home({ currentUser }) {
         <div className="hero-btns">
           <Link to="/add-problem" className="btn">📜 Подати заявку</Link>
           <Link to="/problems" className="btn btn-ghost">📋 Мої заявки</Link>
+
+          < a href="https://t.me/citadel_service_order_Bot/citadel"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-tg"
+          >
+            ✈️ Відкрити в Telegram
+          </a>
         </div>
       </div>
 

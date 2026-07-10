@@ -1192,3 +1192,14 @@ html { scroll-behavior: smooth; }
   .hero-title { font-size: 1.3rem; }
   .stats-hero-card { padding: 1.2rem 0.9rem; }
 }
+
+.btn-tg {
+  background: linear-gradient(135deg, #0088cc, #00aaff);
+  color: #fff;
+  border: none;
+}
+.btn-tg:hover {
+  background: linear-gradient(135deg, #006699, #0088cc);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(0,136,204,0.4);
+}
